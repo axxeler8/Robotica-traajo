@@ -35,21 +35,20 @@ E-puck {
 }
 
 # ============================================================
-# ESCENARIO COMPLEJO: Pasillo con chicanas (tipo slalom)
-# Arena 1x1 m. Paredes laterales forman un corredor de ~20 cm.
+# ESCENARIO COMPLEJO: Pasillo estrecho con chicanas (slalom)
+# Arena 1x1 m. Paredes laterales forman un corredor de 20 cm.
 # Dentro del corredor hay muros alternados que obligan al robot
-# a hacer zigzag (como chicanas). Esto fuerza multiples
-# detecciones frontales y laterales, demostrando claramente
-# la evasion de obstaculos y el uso de sensores laterales.
+# a hacer zigzag. Esto fuerza detecciones frontales y laterales,
+# demostrando la evasion de obstaculos en pasillos estrechos.
 # E-puck: ~7 cm diametro; sensores IR rango ~5 cm.
 # ============================================================
 
-# === PAREDES DEL CORREDOR (y = -0.12 e y = +0.12) ===
-# Corredor de 24 cm de ancho (robot 7 cm → ~8.5 cm holgura por lado)
+# === PAREDES DEL CORREDOR (y = -0.10 e y = +0.10) ===
+# Corredor de 20 cm de ancho (robot 7 cm → ~6.5 cm holgura por lado)
 
 # --- Pared superior larga ---
 Solid {
-  translation 0.0 0.12 0.025
+  translation 0.0 0.10 0.025
   name "wall_top"
   children [
     Shape {
@@ -70,7 +69,7 @@ Solid {
 
 # --- Pared inferior larga ---
 Solid {
-  translation 0.0 -0.12 0.025
+  translation 0.0 -0.10 0.025
   name "wall_bottom"
   children [
     Shape {
@@ -90,13 +89,13 @@ Solid {
 }
 
 # === CHICANAS: Muros alternados dentro del corredor ===
-# Cada chicana bloquea ~55% del ancho del pasillo, dejando ~12 cm
-# de espacio libre (robot 7 cm → ~2.5 cm de margen por lado).
+# Cada chicana bloquea ~50% del ancho del pasillo, dejando ~10 cm
+# de espacio libre (robot 7 cm → ~1.5 cm de margen por lado).
 
 # --- Chicana 1: Sale de la pared inferior, bloquea paso central-abajo ---
 # Deja paso libre arriba (y > 0)
 Solid {
-  translation -0.22 -0.05 0.025
+  translation -0.24 -0.05 0.025
   name "chicane_1"
   children [
     Shape {
@@ -118,7 +117,7 @@ Solid {
 # --- Chicana 2: Sale de la pared superior, bloquea paso central-arriba ---
 # Deja paso libre abajo (y < 0)
 Solid {
-  translation -0.06 0.05 0.025
+  translation -0.08 0.05 0.025
   name "chicane_2"
   children [
     Shape {
@@ -140,7 +139,7 @@ Solid {
 # --- Chicana 3: Sale de la pared inferior ---
 # Deja paso libre arriba
 Solid {
-  translation 0.10 -0.05 0.025
+  translation 0.08 -0.05 0.025
   name "chicane_3"
   children [
     Shape {
@@ -184,7 +183,7 @@ Solid {
 # --- Chicana 5: Sale de la pared inferior (ultima) ---
 # Deja paso libre arriba hacia la salida del corredor
 Solid {
-  translation 0.36 -0.05 0.025
+  translation 0.38 -0.05 0.025
   name "chicane_5"
   children [
     Shape {

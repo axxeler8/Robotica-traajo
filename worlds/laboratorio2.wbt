@@ -7,8 +7,8 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 
 WorldInfo {
   info [
-    "Laboratorio 2: Escenario SIMPLE - arena compacta con obstaculos"
-    "El robot debe esquivar multiples obstaculos en espacio reducido"
+    "Laboratorio 2: Escenario SIMPLE - pocos obstaculos guiados"
+    "Navegacion reactiva con filtrado y fusion de sensores"
     "ICI 4150 - Robotica y Sistemas Autonomos"
   ]
   title "Lab2 - Escenario Simple"
@@ -16,18 +16,18 @@ WorldInfo {
 }
 Viewpoint {
   orientation -0.5773 0.5773 0.5773 2.094
-  position 0 0 1.0
+  position 0 0 1.2
 }
 TexturedBackground {
 }
 TexturedBackgroundLight {
 }
 RectangleArena {
-  floorSize 0.5 0.5
+  floorSize 1 1
   wallHeight 0.05
 }
 E-puck {
-  translation -0.15 0 0
+  translation -0.35 0 0
   rotation 0 0 1 0
   name "e-puck"
   controller "lab2_controller"
@@ -35,17 +35,16 @@ E-puck {
 }
 
 # ============================================================
-# ESCENARIO SIMPLE: Arena compacta 0.5x0.5 m
-# Robot en (-0.15, 0) mirando +X. Arena de +-0.25 m.
-# Obstaculos distribuidos para forzar multiples evasiones.
-# E-puck: ~7 cm diametro; sensores IR rango ~5 cm.
+# ESCENARIO SIMPLE: pocos obstaculos con trayectorias claras
+# Arena 1x1 m. Robot en (-0.35, 0) mirando +X.
+# Obstaculo frontal obliga primer giro y dos obstaculos laterales
+# fuerzan decision izquierda/derecha con espacio suficiente.
 # ============================================================
 
-# --- Obstaculo 1: Muro frontal directo ---
-# Bloquea el camino recto del robot, forzando primer giro.
+# --- Obstaculo 1: Muro frontal (bloquea avance directo) ---
 Solid {
-  translation 0.0 0 0.025
-  name "obs1_wall_front"
+  translation -0.10 0 0.025
+  name "obs1_front_wall"
   children [
     Shape {
       appearance PBRAppearance {
@@ -54,20 +53,19 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.02 0.18 0.05
+        size 0.02 0.16 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.02 0.18 0.05
+    size 0.02 0.16 0.05
   }
 }
 
-# --- Obstaculo 2: Muro superior ---
-# Bloquea si el robot sube tras esquivar obs1.
+# --- Obstaculo 2: Caja lateral izquierda ---
 Solid {
-  translation -0.08 0.15 0.025
-  name "obs2_top"
+  translation 0.12 0.08 0.025
+  name "obs2_left"
   children [
     Shape {
       appearance PBRAppearance {
@@ -76,20 +74,19 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.12 0.02 0.05
+        size 0.04 0.04 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.12 0.02 0.05
+    size 0.04 0.04 0.05
   }
 }
 
-# --- Obstaculo 3: Muro inferior ---
-# Bloquea si el robot baja tras esquivar obs1.
+# --- Obstaculo 3: Caja lateral derecha ---
 Solid {
-  translation -0.08 -0.15 0.025
-  name "obs3_bottom"
+  translation 0.22 -0.08 0.025
+  name "obs3_right"
   children [
     Shape {
       appearance PBRAppearance {
@@ -98,55 +95,11 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.12 0.02 0.05
+        size 0.04 0.04 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.12 0.02 0.05
-  }
-}
-
-# --- Obstaculo 4: Cilindro en zona derecha ---
-Solid {
-  translation 0.12 -0.06 0.025
-  name "obs4_cylinder"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.9 0.7 0.1
-        roughness 0.3
-        metalness 0.0
-      }
-      geometry Cylinder {
-        height 0.05
-        radius 0.025
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    height 0.05
-    radius 0.025
-  }
-}
-
-# --- Obstaculo 5: Muro diagonal derecho ---
-Solid {
-  translation 0.15 0.10 0.025
-  name "obs5_right"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.7 0.3 0.7
-        roughness 0.4
-        metalness 0.0
-      }
-      geometry Box {
-        size 0.02 0.12 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.02 0.12 0.05
+    size 0.04 0.04 0.05
   }
 }

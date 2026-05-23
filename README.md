@@ -180,16 +180,18 @@ else:                                         # Obstáculo detectado
 ## Escenarios de prueba
 
 ### Escenario Simple (`worlds/laboratorio2.wbt`)
-Arena de **1×1 m** con **5 obstáculos estratégicos** dispuestos en zigzag.
-El robot parte desde x=-0.35 mirando hacia +X y se encuentra directamente
-con muros y cilindros en su trayectoria, obligando múltiples maniobras de
-evasión. Incluye muros frontales, laterales y un cilindro aislado.
+Arena de **1×1 m** con **3 obstáculos guiados** (no aleatorios). El robot
+parte desde x=-0.35 mirando hacia +X y enfrenta:
+- **Un muro frontal** que bloquea el avance directo (giro obligado)
+- **Una caja lateral izquierda**
+- **Una caja lateral derecha**
+El diseño fuerza decisiones claras de giro con espacio suficiente.
 
 ### Escenario Complejo (`worlds/laboratorio2_complex.wbt`)
-Arena de **1×1 m** con un **corredor de 20 cm de ancho** (paredes paralelas)
-y **5 chicanas alternadas** tipo slalom dentro del pasillo. Cada chicana
-bloquea ~60% del ancho del corredor, forzando al robot a hacer zigzag
-constante. Este escenario demuestra:
+Arena de **1×1 m** con un **corredor de 20 cm de ancho** y **5 chicanas
+alternadas** tipo slalom dentro del pasillo. Cada chicana bloquea ~50%
+del ancho, dejando un paso estrecho que obliga zigzag continuo. Este
+escenario demuestra:
 - Navegación en espacios confinados
 - Uso intensivo de sensores frontales Y laterales
 - Múltiples decisiones rápidas de giro basadas en el Kalman
