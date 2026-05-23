@@ -7,11 +7,11 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 
 WorldInfo {
   info [
-    "Laboratorio 2: Escenario SIMPLE - compuertas guiadas"
+    "Laboratorio 2: Escenario SIMPLE - slalom de precision"
     "Navegacion reactiva con filtrado y fusion de sensores"
     "ICI 4150 - Robotica y Sistemas Autonomos"
   ]
-  title "Lab2 - Escenario Simple"
+  title "Lab2 - Escenario Simple: Slalom de Precision"
   basicTimeStep 32
 }
 Viewpoint {
@@ -27,7 +27,7 @@ RectangleArena {
   wallHeight 0.05
 }
 E-puck {
-  translation -0.40 0 0
+  translation -0.42 0 0
   rotation 0 0 1 0
   name "e-puck"
   controller "lab2_controller"
@@ -35,64 +35,93 @@ E-puck {
 }
 
 # ============================================================
-# ESCENARIO SIMPLE: compuertas alternadas + pilar final
-# Arena 1x1 m. Robot en (-0.40, 0) mirando +X.
-# Dos compuertas obligan a elegir arriba/abajo, luego un pilar
-# central fuerza una ultima correccion.
+# ESCENARIO SIMPLE: Slalom de Precision (4 pilares en rombo)
+# Arena 1x1 m. Robot en (-0.42, 0) mirando +X.
+# Cuatro pilares forman un camino en rombo que el robot debe
+# atravesar con precisión. Cada pilar esta colocado de forma
+# que los sensores laterales guian naturalmente la trayectoria.
+# Diseñado para mostrar navegacion reactiva limpia y elegante.
 # ============================================================
 
-# --- Comp. 1: bloque inferior (deja paso por arriba) ---
+# --- Pilar 1 (izquierda): primera correccion ---
 Solid {
-  translation -0.18 -0.12 0.025
-  name "gate1_bottom"
+  translation -0.16 0.05 0.025
+  name "pilar_1_izq"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.85 0.25 0.25
-        roughness 0.4
-        metalness 0.0
+        baseColor 0.90 0.25 0.20
+        roughness 0.30
+        metalness 0.05
       }
-      geometry Box {
-        size 0.02 0.16 0.05
+      geometry Cylinder {
+        height 0.05
+        radius 0.025
       }
     }
   ]
-  boundingObject Box {
-    size 0.02 0.16 0.05
+  boundingObject Cylinder {
+    height 0.05
+    radius 0.025
   }
 }
 
-# --- Comp. 2: bloque superior (deja paso por abajo) ---
+# --- Pilar 2 (derecha): segunda correccion ---
 Solid {
-  translation 0.02 0.12 0.025
-  name "gate2_top"
+  translation 0.06 -0.05 0.025
+  name "pilar_2_der"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.25 0.45 0.85
-        roughness 0.4
-        metalness 0.0
+        baseColor 0.20 0.50 0.85
+        roughness 0.30
+        metalness 0.05
       }
-      geometry Box {
-        size 0.02 0.16 0.05
+      geometry Cylinder {
+        height 0.05
+        radius 0.025
       }
     }
   ]
-  boundingObject Box {
-    size 0.02 0.16 0.05
+  boundingObject Cylinder {
+    height 0.05
+    radius 0.025
   }
 }
 
-# --- Pilar final (centrado) ---
+# --- Pilar 3 (izquierda): tercera correccion ---
 Solid {
-  translation 0.24 0.0 0.025
-  name "pillar_final"
+  translation 0.20 0.05 0.025
+  name "pilar_3_izq"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.25 0.8 0.4
-        roughness 0.35
-        metalness 0.0
+        baseColor 0.25 0.75 0.35
+        roughness 0.30
+        metalness 0.05
+      }
+      geometry Cylinder {
+        height 0.05
+        radius 0.025
+      }
+    }
+  ]
+  boundingObject Cylinder {
+    height 0.05
+    radius 0.025
+  }
+}
+
+# --- Pilar 4 (derecha): cuarta correccion ---
+Solid {
+  translation 0.35 -0.05 0.025
+  name "pilar_4_der"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.70 0.35 0.70
+        roughness 0.30
+        metalness 0.05
       }
       geometry Cylinder {
         height 0.05

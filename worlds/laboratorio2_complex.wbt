@@ -7,11 +7,11 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 
 WorldInfo {
   info [
-    "Laboratorio 2: Escenario COMPLEJO - pasillo con chicanas abiertas"
+    "Laboratorio 2: Escenario COMPLEJO - laberinto progresivo"
     "Navegacion reactiva con filtrado y fusion de sensores"
     "ICI 4150 - Robotica y Sistemas Autonomos"
   ]
-  title "Lab2 - Escenario Complejo"
+  title "Lab2 - Escenario Complejo: Laberinto Progresivo"
   basicTimeStep 32
 }
 Viewpoint {
@@ -27,7 +27,7 @@ RectangleArena {
   wallHeight 0.05
 }
 E-puck {
-  translation -0.42 0 0
+  translation -0.44 0 0
   rotation 0 0 1 0
   name "e-puck"
   controller "lab2_controller"
@@ -35,125 +35,249 @@ E-puck {
 }
 
 # ============================================================
-# ESCENARIO COMPLEJO: Pasillo con chicanas abiertas
-# Arena 1x1 m. Corredor de 22 cm con chicanas alternadas.
-# El inicio queda libre para que el robot no se trabe.
+# ESCENARIO COMPLEJO: Laberinto Progresivo (3 zonas)
+# Arena 1x1 m. Robot en (-0.44, 0) mirando +X.
+# El corredor se divide en tres zonas de dificultad creciente:
+#   Zona 1 (x=-0.44 a -0.05): Corredor amplio (24 cm), pilar central
+#   Zona 2 (x=-0.05 a 0.30):  Corredor medio (18 cm), obstaculos alternados
+#   Zona 3 (x= 0.30 a 0.44):  Corredor estrecho (14 cm), giro forzado
+# Diseñado para mostrar adaptacion del Kalman a condiciones cambiantes.
 # ============================================================
 
-# === PAREDES DEL CORREDOR (y = -0.11 e y = +0.11) ===
+# === PAREDES EXTERIORES (guian todo el recorrido) ===
+# --- Pared superior (larga, hasta la zona 2) ---
 Solid {
-  translation 0.0 0.11 0.025
-  name "wall_top"
+  translation -0.08 0.12 0.025
+  name "wall_top_main"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.45 0.45 0.50
-        roughness 0.6
-        metalness 0.0
+        baseColor 0.40 0.40 0.45
+        roughness 0.5
+        metalness 0.1
       }
       geometry Box {
-        size 0.90 0.02 0.05
+        size 0.72 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.90 0.02 0.05
-  }
-}
-Solid {
-  translation 0.0 -0.11 0.025
-  name "wall_bottom"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.45 0.45 0.50
-        roughness 0.6
-        metalness 0.0
-      }
-      geometry Box {
-        size 0.90 0.02 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.90 0.02 0.05
+    size 0.72 0.02 0.05
   }
 }
 
-# === CHICANAS (inicio libre hasta x=-0.22) ===
+# --- Pared inferior (larga) ---
 Solid {
-  translation -0.20 -0.06 0.025
-  name "chicane_1"
+  translation -0.08 -0.12 0.025
+  name "wall_bottom_main"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.9 0.3 0.2
-        roughness 0.3
-        metalness 0.0
+        baseColor 0.40 0.40 0.45
+        roughness 0.5
+        metalness 0.1
       }
       geometry Box {
-        size 0.02 0.10 0.05
+        size 0.72 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.02 0.10 0.05
+    size 0.72 0.02 0.05
   }
 }
+
+# === ZONA 1: Corredor amplio (24 cm) + pilar central ===
 Solid {
-  translation -0.02 0.06 0.025
-  name "chicane_2"
+  translation -0.28 0.0 0.025
+  name "zona1_pilar"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.2 0.5 0.9
-        roughness 0.3
-        metalness 0.0
+        baseColor 0.90 0.60 0.10
+        roughness 0.25
+        metalness 0.10
       }
-      geometry Box {
-        size 0.02 0.10 0.05
+      geometry Cylinder {
+        height 0.05
+        radius 0.03
       }
     }
   ]
-  boundingObject Box {
-    size 0.02 0.10 0.05
+  boundingObject Cylinder {
+    height 0.05
+    radius 0.03
   }
 }
+
+# === ZONA 2: Corredor medio (18 cm) + obstaculos ===
+# --- Estrechamiento: pared superior baja a y=0.09 ---
 Solid {
-  translation 0.16 -0.06 0.025
-  name "chicane_3"
+  translation 0.08 0.09 0.025
+  name "zona2_wall_top"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.9 0.7 0.1
-        roughness 0.3
-        metalness 0.0
+        baseColor 0.40 0.40 0.45
+        roughness 0.5
+        metalness 0.1
       }
       geometry Box {
-        size 0.02 0.10 0.05
+        size 0.26 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.02 0.10 0.05
+    size 0.26 0.02 0.05
   }
 }
+
+# --- Estrechamiento: pared inferior sube a y=-0.09 ---
 Solid {
-  translation 0.34 0.06 0.025
-  name "chicane_4"
+  translation 0.08 -0.09 0.025
+  name "zona2_wall_bottom"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.2 0.8 0.3
-        roughness 0.3
-        metalness 0.0
+        baseColor 0.40 0.40 0.45
+        roughness 0.5
+        metalness 0.1
       }
       geometry Box {
-        size 0.02 0.10 0.05
+        size 0.26 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.02 0.10 0.05
+    size 0.26 0.02 0.05
+  }
+}
+
+# --- Obstaculo zona 2: caja derecha ---
+Solid {
+  translation 0.14 0.04 0.025
+  name "zona2_obs_der"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.20 0.50 0.85
+        roughness 0.30
+        metalness 0.05
+      }
+      geometry Box {
+        size 0.03 0.04 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.03 0.04 0.05
+  }
+}
+
+# --- Obstaculo zona 2: caja izquierda ---
+Solid {
+  translation 0.26 -0.04 0.025
+  name "zona2_obs_izq"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.85 0.25 0.20
+        roughness 0.30
+        metalness 0.05
+      }
+      geometry Box {
+        size 0.03 0.04 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.03 0.04 0.05
+  }
+}
+
+# === ZONA 3: Corredor estrecho (14 cm) + giro forzado ===
+# --- Pared superior zona 3 (y=0.07) ---
+Solid {
+  translation 0.35 0.07 0.025
+  name "zona3_wall_top"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.35 0.35 0.40
+        roughness 0.5
+        metalness 0.1
+      }
+      geometry Box {
+        size 0.20 0.02 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.20 0.02 0.05
+  }
+}
+
+# --- Pared inferior zona 3 (y=-0.07) ---
+Solid {
+  translation 0.35 -0.07 0.025
+  name "zona3_wall_bottom"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.35 0.35 0.40
+        roughness 0.5
+        metalness 0.1
+      }
+      geometry Box {
+        size 0.20 0.02 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.20 0.02 0.05
+  }
+}
+
+# --- Bloqueo final: pared que cierra el paso (fuerza giro) ---
+Solid {
+  translation 0.42 0.0 0.025
+  name "zona3_end_wall"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.70 0.25 0.70
+        roughness 0.30
+        metalness 0.05
+      }
+      geometry Box {
+        size 0.02 0.14 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.02 0.14 0.05
+  }
+}
+
+# --- Pilar final (salida alternativa) ---
+Solid {
+  translation 0.32 0.18 0.025
+  name "zona3_pilar_salida"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.25 0.80 0.40
+        roughness 0.25
+        metalness 0.10
+      }
+      geometry Cylinder {
+        height 0.05
+        radius 0.025
+      }
+    }
+  ]
+  boundingObject Cylinder {
+    height 0.05
+    radius 0.025
   }
 }

@@ -180,20 +180,40 @@ else:                                         # Obstáculo detectado
 ## Escenarios de prueba
 
 ### Escenario Simple (`worlds/laboratorio2.wbt`)
-Arena de **1×1 m** con **dos compuertas alternadas** y un pilar final.
-El robot parte desde x=-0.40 mirando hacia +X y debe:
-- Pasar por una compuerta inferior (deja paso por arriba)
-- Luego por una compuerta superior (deja paso por abajo)
-- Evitar un pilar centrado al final
-El diseno genera decisiones claras de izquierda/derecha sin saturar el espacio.
+**Slalom de Precisión** — Arena 1×1 m con **4 pilares en formación rombo**
+(rojo, azul, verde, violeta). El robot parte desde x=-0.42 mirando hacia +X
+y debe esquivar cada pilar con correcciones suaves de trayectoria.
+
+Esquema del recorrido esperado:
+```
+Salida  ●        ● Pilar 3 (verde)
+         \      /
+          \    /
+   Pilar 1 ●  ● Pilar 4 (violeta) → Meta
+          /    \
+         /      \
+        ●        ● Pilar 2 (azul)
+    Robot
+```
+Este diseño evalúa precisión de evitación en espacio abierto con
+obstáculos puntuales. Ideal para comparar señal cruda vs Kalman.
 
 ### Escenario Complejo (`worlds/laboratorio2_complex.wbt`)
-Arena de **1×1 m** con un **corredor de 22 cm** y **chicanas alternadas**.
-El inicio queda libre para evitar trabas y las chicanas fuerzan zigzag.
-Este escenario demuestra:
-- Navegacion en pasillos estrechos con cambios de direccion
-- Uso continuo de sensores frontales y laterales
-- Reaccion ante obstaculos internos dentro del corredor
+**Laberinto Progresivo** — Arena 1×1 m con **3 zonas de dificultad creciente**:
+
+| Zona | Ancho | Obstáculos | Propósito |
+|------|-------|------------|-----------|
+| Zona 1 (x=-0.44 a -0.05) | 24 cm | Pilar central amarillo (r=3 cm) | Navegación cómoda, primera decisión |
+| Zona 2 (x=-0.05 a 0.30) | 18 cm | Caja azul derecha + caja roja izquierda | Espacio reducido, zigzag forzado |
+| Zona 3 (x=0.30 a 0.44) | 14 cm | Pared de cierre violeta + pilar verde de salida | Corredor estrecho, giro obligado |
+
+Las paredes se estrechan progresivamente y la zona 3 termina con
+una pared que bloquea el paso, forzando al robot a buscar una salida
+alternativa. Este diseño permite analizar:
+- **Adaptación del Kalman** a condiciones cambiantes (ancho variable)
+- **Estabilidad del movimiento** en espacios confinados
+- **Efectividad de la fusión sensorial** bajo estrés (zona 3)
+- **Tasa de colisiones** por zona para comparación cuantitativa
 
 ### Análisis comparativo entre escenarios
 Para cada escenario se debe evaluar:
