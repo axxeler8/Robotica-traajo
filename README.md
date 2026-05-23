@@ -148,24 +148,28 @@ P_k = (1 - K_k) · P_k⁻
 Donde `z_k` es la medición del sensor frontal (`min(ps0, ps7)`).
 
 ### Parámetros
-- `R = 0.001` — Varianza de la medición (ruido del sensor)
+- `R = 0.0005` — Varianza de la medición (ruido del sensor)
 - `Q = 0.0001` — Varianza del proceso (incertidumbre del modelo)
 
 ## Lógica de navegación reactiva
 
 ```
-if z_frontal < CRITICAL_DISTANCE (0.03 m):    # Emergencia: sensor crudo
+if z_frontal < CRITICAL_DISTANCE (0.008 m):   # Emergencia: sensor crudo
     GIRAR (usando sensores laterales)
-elif d̂_k > SAFE_DISTANCE (0.08 m):            # Kalman: vía libre
+elif d̂_k > SAFE_DISTANCE (0.04 m)
+     AND filtered > SAFE_DISTANCE:             # Kalman + filtro: vía libre
     AVANZAR recto
-else:                                         # Kalman: obstáculo detectado
+else:                                         # Obstáculo detectado
     GIRAR (usando sensores laterales)
 ```
 
-> **Nota:** `SAFE_DISTANCE` es mayor que el rango máximo de los sensores IR
-> del e-puck (~0.05 m) porque el Kalman mantiene la estimación alta cuando no
-> hay obstáculos. El chequeo de emergencia (`CRITICAL_DISTANCE = 0.03 m`)
-> actúa como respaldo inmediato ante obstáculos muy cercanos.
+> **Nota:** Los sensores IR del e-puck retornan valores de proximidad (mayor = más
+> cerca), no distancia en metros. Se convierte internamente usando la lookup table
+> del sensor: `distancia = 0.05 × (1 - valor/1024)`. El robot avanza **solo** si
+> tanto la estimación Kalman como la señal filtrada indican vía libre, evitando
+> colisiones por retardo del filtro. Además, se usa *innovation gating*: si la
+> diferencia entre medición y predicción supera 10 cm, el Kalman se resetea
+> confiando directamente en la medición.
 
 ## Frecuencia de muestreo
 
@@ -176,17 +180,19 @@ else:                                         # Kalman: obstáculo detectado
 ## Escenarios de prueba
 
 ### Escenario Simple (`worlds/laboratorio2.wbt`)
-Entorno con **3 obstáculos dispersos** (2 cajas + 1 cilindro) en una arena de 2×2 m.
-El robot tiene espacio amplio para navegar y los obstáculos están separados,
-lo que permite evaluar el comportamiento base de la navegación reactiva.
+Arena de **1×1 m** con **5 obstáculos estratégicos** dispuestos en zigzag.
+El robot parte desde x=-0.35 mirando hacia +X y se encuentra directamente
+con muros y cilindros en su trayectoria, obligando múltiples maniobras de
+evasión. Incluye muros frontales, laterales y un cilindro aislado.
 
 ### Escenario Complejo (`worlds/laboratorio2_complex.wbt`)
-Entorno con **pasillo estrecho** (~20 cm de ancho) flanqueado por paredes
-segmentadas, con **5 obstáculos adicionales** dentro y fuera del pasillo.
-Este escenario fuerza al robot a:
-- Navegar en espacios confinados
-- Realizar múltiples giros para evitar colisiones
-- Tomar decisiones frecuentes basadas en las estimaciones del Kalman
+Arena de **1×1 m** con un **corredor de 20 cm de ancho** (paredes paralelas)
+y **5 chicanas alternadas** tipo slalom dentro del pasillo. Cada chicana
+bloquea ~60% del ancho del corredor, forzando al robot a hacer zigzag
+constante. Este escenario demuestra:
+- Navegación en espacios confinados
+- Uso intensivo de sensores frontales Y laterales
+- Múltiples decisiones rápidas de giro basadas en el Kalman
 
 ### Análisis comparativo entre escenarios
 Para cada escenario se debe evaluar:
@@ -218,11 +224,12 @@ python3 plot_lab2.py simple
 python3 plot_lab2.py complex
 ```
 
-Para cada escenario se generan 4 gráficos con prefijo `simple_` o `complex_`:
+Para cada escenario se generan 5 gráficos con prefijo `simple_` o `complex_`:
 - `{escenario}_comparacion_senales.png` — Señal cruda, filtrada y Kalman
 - `{escenario}_superposicion_senales.png` — Las tres señales superpuestas
 - `{escenario}_ganancia_kalman.png` — Evolución de la ganancia K
 - `{escenario}_laterales_y_desplazamiento.png` — Sensores laterales y Δs
+- `{escenario}_encoders_y_sensores_crudos.png` — Encoders crudos y sensores IR crudos
 
 ## Análisis de las señales registradas
 
@@ -262,6 +269,7 @@ Posibles fuentes de error: deslizamiento, resolución de encoders.]
 | ![Superposición Simple](controllers/lab2_controller/simple_superposicion_senales.png) | Superposición de las tres señales |
 | ![Ganancia Kalman Simple](controllers/lab2_controller/simple_ganancia_kalman.png) | Evolución de la ganancia K |
 | ![Laterales Simple](controllers/lab2_controller/simple_laterales_y_desplazamiento.png) | Sensores laterales y Δs |
+| ![Encoders Simple](controllers/lab2_controller/simple_encoders_y_sensores_crudos.png) | Encoders y sensores crudos |
 
 ### Escenario Complejo
 
@@ -271,6 +279,7 @@ Posibles fuentes de error: deslizamiento, resolución de encoders.]
 | ![Superposición Complejo](controllers/lab2_controller/complex_superposicion_senales.png) | Superposición de las tres señales |
 | ![Ganancia Kalman Complejo](controllers/lab2_controller/complex_ganancia_kalman.png) | Evolución de la ganancia K |
 | ![Laterales Complejo](controllers/lab2_controller/complex_laterales_y_desplazamiento.png) | Sensores laterales y Δs |
+| ![Encoders Complejo](controllers/lab2_controller/complex_encoders_y_sensores_crudos.png) | Encoders y sensores crudos |
 
 ## Resultados en los escenarios de prueba
 

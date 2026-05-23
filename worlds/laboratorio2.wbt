@@ -7,90 +7,115 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 
 WorldInfo {
   info [
-    "Laboratorio 2: Escenario SIMPLE - pocos obstáculos"
-    "Navegación reactiva con filtrado y fusión de sensores"
-    "ICI 4150 - Robótica y Sistemas Autónomos"
+    "Laboratorio 2: Escenario SIMPLE - arena compacta con obstaculos"
+    "El robot debe esquivar multiples obstaculos en espacio reducido"
+    "ICI 4150 - Robotica y Sistemas Autonomos"
   ]
   title "Lab2 - Escenario Simple"
   basicTimeStep 32
 }
 Viewpoint {
   orientation -0.5773 0.5773 0.5773 2.094
-  position 0 0 2.5
+  position 0 0 1.0
 }
 TexturedBackground {
 }
 TexturedBackgroundLight {
 }
 RectangleArena {
-  floorSize 2 2
+  floorSize 0.5 0.5
   wallHeight 0.05
 }
 E-puck {
-  translation 0 0 0
+  translation -0.15 0 0
   rotation 0 0 1 0
   name "e-puck"
   controller "lab2_controller"
   customData "simple"
 }
+
 # ============================================================
-# ESCENARIO SIMPLE: Arena abierta con 3 obstaculos dispersos
-# Los obstaculos estan en la trayectoria del robot (eje +x)
-# pero con suficiente separacion para navegar.
-# NOTA: Sensores IR del e-puck tienen rango maximo ~5 cm.
+# ESCENARIO SIMPLE: Arena compacta 0.5x0.5 m
+# Robot en (-0.15, 0) mirando +X. Arena de +-0.25 m.
+# Obstaculos distribuidos para forzar multiples evasiones.
+# E-puck: ~7 cm diametro; sensores IR rango ~5 cm.
 # ============================================================
 
-# Obstaculo 1: Caja centrada al frente (a 12 cm)
+# --- Obstaculo 1: Muro frontal directo ---
+# Bloquea el camino recto del robot, forzando primer giro.
 Solid {
-  translation 0.12 0 0.025
-  name "obs1_front"
+  translation 0.0 0 0.025
+  name "obs1_wall_front"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.9 0.3 0.3
+        baseColor 0.9 0.2 0.2
         roughness 0.4
         metalness 0.0
       }
       geometry Box {
-        size 0.04 0.04 0.05
+        size 0.02 0.18 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.04 0.04 0.05
+    size 0.02 0.18 0.05
   }
 }
 
-# Obstaculo 2: Caja desplazada a la derecha (a 22 cm)
+# --- Obstaculo 2: Muro superior ---
+# Bloquea si el robot sube tras esquivar obs1.
 Solid {
-  translation 0.22 0.06 0.025
-  name "obs2_right"
+  translation -0.08 0.15 0.025
+  name "obs2_top"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.3 0.3 0.9
+        baseColor 0.2 0.5 0.9
         roughness 0.4
         metalness 0.0
       }
       geometry Box {
-        size 0.04 0.04 0.05
+        size 0.12 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.04 0.04 0.05
+    size 0.12 0.02 0.05
   }
 }
 
-# Obstaculo 3: Cilindro a la izquierda (a 32 cm)
+# --- Obstaculo 3: Muro inferior ---
+# Bloquea si el robot baja tras esquivar obs1.
 Solid {
-  translation 0.32 -0.05 0.025
-  name "obs3_left"
+  translation -0.08 -0.15 0.025
+  name "obs3_bottom"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.3 0.8 0.3
+        baseColor 0.2 0.8 0.3
         roughness 0.4
+        metalness 0.0
+      }
+      geometry Box {
+        size 0.12 0.02 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.12 0.02 0.05
+  }
+}
+
+# --- Obstaculo 4: Cilindro en zona derecha ---
+Solid {
+  translation 0.12 -0.06 0.025
+  name "obs4_cylinder"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.7 0.1
+        roughness 0.3
         metalness 0.0
       }
       geometry Cylinder {
@@ -105,23 +130,23 @@ Solid {
   }
 }
 
-# Obstaculo 4: Caja al fondo (a 45 cm)
+# --- Obstaculo 5: Muro diagonal derecho ---
 Solid {
-  translation 0.45 0 0.025
-  name "obs4_far"
+  translation 0.15 0.10 0.025
+  name "obs5_right"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.7 0.5 0.2
+        baseColor 0.7 0.3 0.7
         roughness 0.4
         metalness 0.0
       }
       geometry Box {
-        size 0.05 0.05 0.05
+        size 0.02 0.12 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.05 0.05 0.05
+    size 0.02 0.12 0.05
   }
 }

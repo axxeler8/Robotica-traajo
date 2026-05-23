@@ -25,7 +25,9 @@ def load_data(csv_path):
     data = {
         'time': [], 'raw_frontal': [], 'filtered_frontal': [],
         'kalman_estimate': [], 'raw_left': [], 'raw_right': [],
-        'kalman_gain': [], 'delta_s': [], 'action': []
+        'kalman_gain': [], 'delta_s': [], 'action': [],
+        'encoder_L': [], 'encoder_R': [],
+        'sensor_raw_FL': [], 'sensor_raw_FR': []
     }
     with open(csv_path, 'r') as f:
         reader = csv.DictReader(f)
@@ -39,6 +41,10 @@ def load_data(csv_path):
             data['kalman_gain'].append(float(row['kalman_gain']))
             data['delta_s'].append(float(row['delta_s']))
             data['action'].append(row['action'])
+            data['encoder_L'].append(float(row['encoder_L']))
+            data['encoder_R'].append(float(row['encoder_R']))
+            data['sensor_raw_FL'].append(float(row['sensor_raw_FL']))
+            data['sensor_raw_FR'].append(float(row['sensor_raw_FR']))
     return data
 
 
@@ -52,6 +58,10 @@ def plot_comparison(data, output_dir, prefix="", scenario_label=""):
     delta_s = np.array(data['delta_s'])
     left = np.array(data['raw_left'])
     right = np.array(data['raw_right'])
+    enc_L = np.array(data['encoder_L'])
+    enc_R = np.array(data['encoder_R'])
+    raw_FL = np.array(data['sensor_raw_FL'])
+    raw_FR = np.array(data['sensor_raw_FR'])
 
     title_suffix = f" - Escenario {scenario_label}" if scenario_label else ""
 
@@ -147,6 +157,32 @@ def plot_comparison(data, output_dir, prefix="", scenario_label=""):
     fig.savefig(os.path.join(output_dir, f'{prefix}laterales_y_desplazamiento.png'), dpi=150)
     plt.close(fig)
     print(f"Gráfico guardado: {prefix}laterales_y_desplazamiento.png")
+
+    # ------------------------------------------------------------------
+    # Figura 5: Señales crudas de encoders y sensores de proximidad
+    # ------------------------------------------------------------------
+    fig, axes = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+    fig.suptitle(f'Señales Crudas: Encoders y Sensores de Proximidad{title_suffix}', fontweight='bold')
+
+    axes[0].plot(t, enc_L, 'b-', alpha=0.7, linewidth=0.8, label='Encoder izquierdo (rad)')
+    axes[0].plot(t, enc_R, 'r-', alpha=0.7, linewidth=0.8, label='Encoder derecho (rad)')
+    axes[0].set_ylabel('Posición angular (rad)')
+    axes[0].set_title('Lecturas crudas de encoders de rueda')
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+
+    axes[1].plot(t, raw_FL, 'c-', alpha=0.6, linewidth=0.6, label='ps7 (frontal izq.)')
+    axes[1].plot(t, raw_FR, 'm-', alpha=0.6, linewidth=0.6, label='ps0 (frontal der.)')
+    axes[1].set_xlabel('Tiempo (s)')
+    axes[1].set_ylabel('Valor de proximidad')
+    axes[1].set_title('Lecturas crudas de sensores IR frontales (mayor = más cerca)')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    fig.savefig(os.path.join(output_dir, f'{prefix}encoders_y_sensores_crudos.png'), dpi=150)
+    plt.close(fig)
+    print(f"Gráfico guardado: {prefix}encoders_y_sensores_crudos.png")
 
 
 def main():
