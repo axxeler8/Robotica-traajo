@@ -35,15 +35,16 @@ E-puck {
 }
 
 # ============================================================
-# ESCENARIO COMPLEJO: Pasillo estrecho con multiples obstaculos
+# ESCENARIO COMPLEJO: Pasillo de 18 cm con 5 obstaculos
+# Paredes a y=±0.09 → corredor de 18 cm (robot 7 cm → 5.5 cm
+# de holgura a cada lado). Obstaculos escalonados dentro del
+# pasillo, con espacio suficiente para que el robot maniobre.
 # NOTA: Sensores IR del e-puck tienen rango maximo ~5 cm.
-# Paredes a 6 cm del centro (corredor de 12 cm) para que los
-# sensores laterales las detecten (robot borde ~3.5 cm del centro).
 # ============================================================
 
-# --- Pared izquierda del pasillo (y = -0.06) ---
+# --- Pared izquierda del pasillo (y = -0.09) ---
 Solid {
-  translation 0.20 -0.06 0.025
+  translation 0.27 -0.09 0.025
   name "wall_left"
   children [
     Shape {
@@ -52,18 +53,18 @@ Solid {
         roughness 0.6
       }
       geometry Box {
-        size 0.40 0.02 0.05
+        size 0.55 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.40 0.02 0.05
+    size 0.55 0.02 0.05
   }
 }
 
-# --- Pared derecha del pasillo (y = +0.06) ---
+# --- Pared derecha del pasillo (y = +0.09) ---
 Solid {
-  translation 0.20 0.06 0.025
+  translation 0.27 0.09 0.025
   name "wall_right"
   children [
     Shape {
@@ -72,18 +73,18 @@ Solid {
         roughness 0.6
       }
       geometry Box {
-        size 0.40 0.02 0.05
+        size 0.55 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.40 0.02 0.05
+    size 0.55 0.02 0.05
   }
 }
 
-# --- Obstaculo 1: Cilindro centrado en el pasillo (a 10 cm) ---
+# --- Obstaculo 1: Cilindro centrado (a 12 cm) ---
 Solid {
-  translation 0.10 0 0.025
+  translation 0.12 0 0.025
   name "obs1_center"
   children [
     Shape {
@@ -93,19 +94,19 @@ Solid {
       }
       geometry Cylinder {
         height 0.05
-        radius 0.025
+        radius 0.02
       }
     }
   ]
   boundingObject Cylinder {
     height 0.05
-    radius 0.025
+    radius 0.02
   }
 }
 
-# --- Obstaculo 2: Caja desplazada a la derecha (a 20 cm) ---
+# --- Obstaculo 2: Caja a la derecha (a 22 cm) ---
 Solid {
-  translation 0.20 0.03 0.025
+  translation 0.22 0.04 0.025
   name "obs2_right"
   children [
     Shape {
@@ -114,18 +115,18 @@ Solid {
         roughness 0.3
       }
       geometry Box {
-        size 0.04 0.04 0.05
+        size 0.03 0.03 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.04 0.04 0.05
+    size 0.03 0.03 0.05
   }
 }
 
-# --- Obstaculo 3: Caja desplazada a la izquierda (a 30 cm) ---
+# --- Obstaculo 3: Caja a la izquierda (a 32 cm) ---
 Solid {
-  translation 0.30 -0.03 0.025
+  translation 0.32 -0.05 0.025
   name "obs3_left"
   children [
     Shape {
@@ -134,19 +135,19 @@ Solid {
         roughness 0.4
       }
       geometry Box {
-        size 0.04 0.04 0.05
+        size 0.03 0.03 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.04 0.04 0.05
+    size 0.03 0.03 0.05
   }
 }
 
-# --- Obstaculo 4: Cilindro al frente (a 40 cm) ---
+# --- Obstaculo 4: Cilindro centrado (a 42 cm) ---
 Solid {
-  translation 0.40 0 0.025
-  name "obs4_front"
+  translation 0.42 0 0.025
+  name "obs4_center"
   children [
     Shape {
       appearance PBRAppearance {
@@ -165,9 +166,9 @@ Solid {
   }
 }
 
-# --- Obstaculo 5: Caja al final del pasillo (a 48 cm) ---
+# --- Obstaculo 5: Caja al final (a 50 cm, desplazada derecha) ---
 Solid {
-  translation 0.48 0 0.025
+  translation 0.50 0.03 0.025
   name "obs5_end"
   children [
     Shape {
@@ -176,11 +177,11 @@ Solid {
         roughness 0.4
       }
       geometry Box {
-        size 0.05 0.05 0.05
+        size 0.04 0.04 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.05 0.05 0.05
+    size 0.04 0.04 0.05
   }
 }
