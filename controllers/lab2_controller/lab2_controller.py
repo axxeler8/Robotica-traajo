@@ -11,7 +11,7 @@ Implementa:
   - Registro de datos para análisis comparativo
 """
 
-import math
+
 import csv
 import os
 from controller import Robot
@@ -32,13 +32,17 @@ AXLE_LENGTH = 0.052      # Distancia entre ruedas en m
 # ---------------------------------------------------------------------------
 # Parámetros de navegación
 # ---------------------------------------------------------------------------
-FORWARD_SPEED = 3.0      # Velocidad de avance (rad/s)
+FORWARD_SPEED = 1.2      # Velocidad de avance (rad/s) - mas lenta para evitar choques
 TURN_SPEED = 2.5         # Velocidad de giro (rad/s)
-SAFE_DISTANCE = 0.08     # Umbral de seguridad en m (bajo porque los sensores
-                          # IR del e-puck tienen rango maximo ~5 cm)
-CRITICAL_DISTANCE = 0.03 # Distancia critica: si el sensor crudo detecta
-                          # obstaculo mas cerca que esto, se fuerza giro
-MAX_DISTANCE = 0.30      # Distancia máxima considerada (saturación)
+SAFE_DISTANCE = 0.040    # Umbral de seguridad en m
+CLEAR_DISTANCE = 0.050   # Distancia para considerar via libre (histeresis)
+CRITICAL_DISTANCE = 0.020 # Distancia critica para giro de emergencia (m)
+MAX_DISTANCE = 0.30      # Distancia máxima considerada (sin obstáculo)
+STEER_GAIN = 3.0         # Ganancia de corrección lateral al avanzar
+STEER_MAX = 1.2          # Limite de corrección lateral (rad/s)
+AVOID_TURN_STEPS = int(0.30 / Ts)  # Duracion de giro al evitar obstaculo
+INNOVATION_THRESHOLD = 0.10  # Si la diferencia entre medición y predicción
+                              # supera este umbral, se resetea el Kalman
 
 # ---------------------------------------------------------------------------
 # Parámetros del filtro simple (exponencial)
@@ -48,7 +52,7 @@ ALPHA_FILTER = 0.3       # Factor de suavizado (0 < alpha <= 1)
 # ---------------------------------------------------------------------------
 # Parámetros del filtro de Kalman escalar
 # ---------------------------------------------------------------------------
-R = 0.001                # Varianza de la medición (ruido del sensor)
+R = 0.0005               # Varianza de la medición (ruido del sensor)
 Q = 0.0001               # Varianza del proceso (incertidumbre del modelo)
 
 # ---------------------------------------------------------------------------
@@ -57,26 +61,71 @@ Q = 0.0001               # Varianza del proceso (incertidumbre del modelo)
 SIMULATION_DURATION = 120.0  # 2 minutos
 
 
-# Umbral de saturación: lecturas por encima de este valor se consideran
-# "sin obstáculo". Se ajusta automáticamente según el maxRange del sensor.
-SENSOR_SATURATION_RATIO = 0.80  # 80% del maxRange = sensor saturado
+# ---------------------------------------------------------------------------
+# Conversion de sensores IR del e-puck usando lookup table
+# ---------------------------------------------------------------------------
+DEFAULT_SENSOR_RANGE = 0.05
+DEFAULT_SENSOR_MAX_VALUE = 1024.0
+DEFAULT_NOISE_THRESHOLD = 80.0
 
 
-def get_sensor_distance(sensor, saturation_threshold):
+def build_lookup(sensor):
+    """Construye la tabla de lookup (distancia, valor, ruido)."""
+    table = sensor.getLookupTable()
+    entries = []
+    for i in range(0, len(table), 3):
+        entries.append((table[i], table[i + 1], table[i + 2]))
+    return entries
+
+
+def lookup_distance(value, entries):
+    """Interpola distancia desde un valor usando la tabla lookup."""
+    if not entries:
+        return None
+
+    # Se asume que la tabla esta ordenada por distancia
+    v0 = entries[0][1]
+    v_last = entries[-1][1]
+
+    # Fuera de rango
+    if (v0 >= v_last and value >= v0) or (v0 <= v_last and value <= v0):
+        return entries[0][0]
+    if (v0 >= v_last and value <= v_last) or (v0 <= v_last and value >= v_last):
+        return entries[-1][0]
+
+    # Buscar segmento
+    for i in range(len(entries) - 1):
+        d1, v1, _ = entries[i]
+        d2, v2, _ = entries[i + 1]
+        if (v1 >= value >= v2) or (v1 <= value <= v2):
+            if v1 == v2:
+                return 0.5 * (d1 + d2)
+            t = (value - v1) / (v2 - v1)
+            return d1 + t * (d2 - d1)
+
+    return entries[-1][0]
+
+
+def get_sensor_distance(sensor, lookup_info):
     """
-    Retorna la distancia procesada.
-    Los sensores IR del e-puck en Webots devuelven la distancia en metros.
-    Cuando no hay obstáculo, el sensor se satura a su maxRange (~0.05 m).
-    Para que el Kalman funcione, mapeamos "saturado" → MAX_DISTANCE.
+    Retorna distancia en metros a partir del valor crudo del sensor.
+    Si la lectura esta en el maximo rango, se mapea a MAX_DISTANCE.
     """
     value = sensor.getValue()
+    entries = lookup_info['table']
+    max_range = lookup_info['max_range']
 
-    # Sensor saturado (sin obstáculo detectable) → vía libre
-    if value >= saturation_threshold:
+    distance = lookup_distance(value, entries)
+    if distance is None:
+        # Fallback simple si no hay lookup table
+        if value < DEFAULT_NOISE_THRESHOLD:
+            return MAX_DISTANCE
+        distance = DEFAULT_SENSOR_RANGE * (1.0 - value / DEFAULT_SENSOR_MAX_VALUE)
+
+    if distance >= max_range * 0.98:
         return MAX_DISTANCE
 
-    # Obstáculo detectado: retornar la distancia real, acotada
-    return max(0.002, min(MAX_DISTANCE, value))
+    return max(0.001, min(MAX_DISTANCE, distance))
 
 
 def main():
@@ -109,28 +158,31 @@ def main():
     left_sensor.enable(TIME_STEP)
     right_sensor.enable(TIME_STEP)
 
-    # Determinar umbral de saturacion para cada sensor
-    # getMaxValue() puede retornar -1 si es desconocido → usamos 0.05 m
-    # (rango tipico de los sensores IR del e-puck en Webots)
-    def get_saturation_threshold(sensor):
-        mv = sensor.getMaxValue()
-        if mv <= 0:
-            mv = 0.05  # fallback para e-puck
-        return mv * SENSOR_SATURATION_RATIO
+    # Construir lookup tables para cada sensor
+    def make_lookup_info(sensor):
+        entries = build_lookup(sensor)
+        max_range = entries[-1][0] if entries else DEFAULT_SENSOR_RANGE
+        return {'table': entries, 'max_range': max_range}
 
-    sat_thresholds = {
-        'FL': get_saturation_threshold(frontal_left_sensor),
-        'FR': get_saturation_threshold(frontal_right_sensor),
-        'L':  get_saturation_threshold(left_sensor),
-        'R':  get_saturation_threshold(right_sensor),
+    lookup_info = {
+        'FL': make_lookup_info(frontal_left_sensor),
+        'FR': make_lookup_info(frontal_right_sensor),
+        'L':  make_lookup_info(left_sensor),
+        'R':  make_lookup_info(right_sensor),
     }
 
     print("--- Diagnostico de sensores ---")
-    for name, s in [('ps7 FL', frontal_left_sensor), ('ps0 FR', frontal_right_sensor),
-                     ('ps5 L', left_sensor), ('ps2 R', right_sensor)]:
+    for name, key, s in [
+        ('ps7 FL', 'FL', frontal_left_sensor),
+        ('ps0 FR', 'FR', frontal_right_sensor),
+        ('ps5 L', 'L', left_sensor),
+        ('ps2 R', 'R', right_sensor)
+    ]:
         mv = s.getMaxValue()
-        print(f"  {name}: getMaxValue()={mv:.4f}, umbral saturacion={mv * SENSOR_SATURATION_RATIO if mv > 0 else 0.05 * SENSOR_SATURATION_RATIO:.4f}")
-    print("  (saturado = sin obstaculo → se retorna MAX_DISTANCE=0.30 m)")
+        mr = lookup_info[key]['max_range']
+        table_len = len(lookup_info[key]['table'])
+        print(f"  {name}: maxValue={mv:.1f}, maxRange={mr:.3f}m, lookup={table_len} pts")
+    print(f"  Saturacion: distancia >= 0.98*maxRange → MAX_DISTANCE={MAX_DISTANCE}m")
     print("-------------------------------")
 
     # -----------------------------------------------------------------------
@@ -153,11 +205,16 @@ def main():
     # -----------------------------------------------------------------------
     filtered_frontal = MAX_DISTANCE  # Valor inicial del filtro simple
 
+    # Estado de evitacion (mantener giro por algunos pasos)
+    avoid_steps = 0
+
     # -----------------------------------------------------------------------
     # Variables para encoder (para calcular desplazamiento)
+    # Se inicializan en None; se asignan tras el primer robot.step()
+    # para evitar NaN (encoders no tienen valor válido antes del primer step)
     # -----------------------------------------------------------------------
-    prev_left_pos = left_encoder.getValue()
-    prev_right_pos = right_encoder.getValue()
+    prev_left_pos = None
+    prev_right_pos = None
 
     # -----------------------------------------------------------------------
     # Registro de datos (en memoria)
@@ -186,17 +243,17 @@ def main():
         # -------------------------------------------------------------------
         # 1. Lectura de sensores de distancia
         # -------------------------------------------------------------------
-        # Valor real del sensor (en metros, directo de Webots)
+        # Valor crudo del sensor (proximidad: mayor = más cerca, NO en metros)
         raw_val_fl = frontal_left_sensor.getValue()
         raw_val_fr = frontal_right_sensor.getValue()
         raw_val_l = left_sensor.getValue()
         raw_val_r = right_sensor.getValue()
 
         # Distancia procesada (MAX_DISTANCE si no hay obstaculo)
-        raw_frontal_left = get_sensor_distance(frontal_left_sensor, sat_thresholds['FL'])
-        raw_frontal_right = get_sensor_distance(frontal_right_sensor, sat_thresholds['FR'])
-        raw_left = get_sensor_distance(left_sensor, sat_thresholds['L'])
-        raw_right = get_sensor_distance(right_sensor, sat_thresholds['R'])
+        raw_frontal_left = get_sensor_distance(frontal_left_sensor, lookup_info['FL'])
+        raw_frontal_right = get_sensor_distance(frontal_right_sensor, lookup_info['FR'])
+        raw_left = get_sensor_distance(left_sensor, lookup_info['L'])
+        raw_right = get_sensor_distance(right_sensor, lookup_info['R'])
 
         # Medición frontal: el mínimo entre los dos sensores frontales
         z_frontal = min(raw_frontal_left, raw_frontal_right)
@@ -206,6 +263,11 @@ def main():
         # -------------------------------------------------------------------
         curr_left_pos = left_encoder.getValue()
         curr_right_pos = right_encoder.getValue()
+
+        # En el primer paso, inicializar posiciones previas (evita NaN)
+        if prev_left_pos is None:
+            prev_left_pos = curr_left_pos
+            prev_right_pos = curr_right_pos
 
         # Diferencia angular desde el paso anterior (en radianes)
         delta_theta_L = curr_left_pos - prev_left_pos
@@ -240,46 +302,56 @@ def main():
         # Ganancia de Kalman
         K = P_pred / (P_pred + R)
 
-        # Corrección con la medición de los sensores frontales
-        d_est = d_pred + K * (z_frontal - d_pred)
+        # Innovación: diferencia entre medición real y predicción
+        innovation = z_frontal - d_pred
 
-        # Actualización de la covarianza
-        P = (1.0 - K) * P_pred
+        # Si la innovación es muy grande (obstáculo aparece de repente),
+        # se resetea el filtro para confiar directamente en la medición.
+        # Esto evita el retardo del Kalman ante cambios bruscos.
+        if abs(innovation) > INNOVATION_THRESHOLD:
+            d_est = z_frontal
+            P = R  # Resetear covarianza al nivel de ruido del sensor
+        else:
+            # Corrección normal de Kalman
+            d_est = d_pred + K * innovation
+            P = (1.0 - K) * P_pred
 
         # Limitar la estimación al rango físico
         d_est = max(0.002, min(MAX_DISTANCE, d_est))
 
         # -------------------------------------------------------------------
-        # 5. Decisión de navegación reactiva
+        # 5. Decisión de navegación reactiva (anti-colisión)
         # -------------------------------------------------------------------
-        # Chequeo de emergencia: si el sensor crudo detecta un obstáculo
-        # muy cercano, se fuerza el giro inmediatamente sin esperar al Kalman
-        if z_frontal < CRITICAL_DISTANCE:
-            if raw_left < raw_right:
-                left_motor.setVelocity(TURN_SPEED)
-                right_motor.setVelocity(-TURN_SPEED)
-                action = "TURN_RIGHT"
-            else:
-                left_motor.setVelocity(-TURN_SPEED)
-                right_motor.setVelocity(TURN_SPEED)
-                action = "TURN_LEFT"
-        elif d_est > SAFE_DISTANCE:
-            # Avanzar recto
-            left_motor.setVelocity(FORWARD_SPEED)
-            right_motor.setVelocity(FORWARD_SPEED)
-            action = "FORWARD"
+        # Usar la medida mas conservadora entre Kalman y medicion directa
+        front_dist = min(d_est, z_frontal)
+
+        # Direccion de giro: si el obstaculo esta a la izquierda, girar a la derecha
+        turn_dir = 1 if raw_left < raw_right else -1  # 1=right, -1=left
+
+        # Si estamos demasiado cerca, activar secuencia de evitacion
+        if front_dist < CRITICAL_DISTANCE:
+            avoid_steps = max(avoid_steps, AVOID_TURN_STEPS * 2)
+        elif front_dist < SAFE_DISTANCE:
+            avoid_steps = max(avoid_steps, AVOID_TURN_STEPS)
+
+        if avoid_steps > 0:
+            avoid_steps -= 1
+            left_motor.setVelocity(TURN_SPEED * turn_dir)
+            right_motor.setVelocity(-TURN_SPEED * turn_dir)
+            action = "TURN_RIGHT" if turn_dir == 1 else "TURN_LEFT"
         else:
-            # Obstáculo detectado por Kalman: decidir hacia dónde girar
-            if raw_left < raw_right:
-                # Obstáculo más cercano a la izquierda → girar a la derecha
-                left_motor.setVelocity(TURN_SPEED)
-                right_motor.setVelocity(-TURN_SPEED)
-                action = "TURN_RIGHT"
-            else:
-                # Obstáculo más cercano a la derecha (o igual) → girar a la izquierda
-                left_motor.setVelocity(-TURN_SPEED)
-                right_motor.setVelocity(TURN_SPEED)
-                action = "TURN_LEFT"
+            # Avance con correccion lateral suave
+            speed_scale = min(1.0, front_dist / CLEAR_DISTANCE) if CLEAR_DISTANCE > 0 else 1.0
+            base_speed = FORWARD_SPEED * speed_scale
+            steer = (raw_right - raw_left) * STEER_GAIN
+            steer = max(-STEER_MAX, min(STEER_MAX, steer))
+
+            left_speed = base_speed + steer
+            right_speed = base_speed - steer
+
+            left_motor.setVelocity(max(-MAX_SPEED, min(MAX_SPEED, left_speed)))
+            right_motor.setVelocity(max(-MAX_SPEED, min(MAX_SPEED, right_speed)))
+            action = "FORWARD"
 
         # -------------------------------------------------------------------
         # 6. Registrar datos
@@ -290,6 +362,7 @@ def main():
             'sensor_raw_FL': round(raw_val_fl, 6),
             'sensor_raw_FR': round(raw_val_fr, 6),
             'raw_frontal': round(z_frontal, 6),
+            'front_dist': round(front_dist, 6),
             'filtered_frontal': round(filtered_frontal, 6),
             'kalman_estimate': round(d_est, 6),
             'raw_left': round(raw_left, 6),
@@ -307,8 +380,9 @@ def main():
         if step_count <= 5 or step_count % 50 == 0:
             print(f"[t={t:6.2f}s] raw_val=({raw_val_fl:.4f},{raw_val_fr:.4f}) "
                   f"conv=({raw_frontal_left:.4f},{raw_frontal_right:.4f}) "
-                  f"z={z_frontal:.4f} | kalman={d_est:.4f} K={K:.4f} | "
-                  f"accion={action}")
+                  f"z={z_frontal:.4f} front={front_dist:.4f} | "
+                  f"kalman={d_est:.4f} K={K:.4f} | "
+                  f"avoid={avoid_steps} accion={action}")
 
     # -----------------------------------------------------------------------
     # Guardar datos en CSV (nombre según escenario)
