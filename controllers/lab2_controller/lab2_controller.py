@@ -57,21 +57,25 @@ Q = 0.0001               # Varianza del proceso (incertidumbre del modelo)
 SIMULATION_DURATION = 120.0  # 2 minutos
 
 
-def get_sensor_distance(sensor):
+# Umbral de saturación: lecturas por encima de este valor se consideran
+# "sin obstáculo". Se ajusta automáticamente según el maxRange del sensor.
+SENSOR_SATURATION_RATIO = 0.80  # 80% del maxRange = sensor saturado
+
+
+def get_sensor_distance(sensor, saturation_threshold):
     """
-    Retorna la distancia en metros medida por el sensor.
-    Los sensores de distancia del e-puck en Webots (DistanceSensor)
-    devuelven el valor directamente en metros (0 a maxRange).
-    Cuando no hay obstáculo, el sensor retorna su valor máximo (maxRange).
-    En ese caso, retornamos MAX_DISTANCE para indicar "vía libre".
+    Retorna la distancia procesada.
+    Los sensores IR del e-puck en Webots devuelven la distancia en metros.
+    Cuando no hay obstáculo, el sensor se satura a su maxRange (~0.05 m).
+    Para que el Kalman funcione, mapeamos "saturado" → MAX_DISTANCE.
     """
     value = sensor.getValue()
-    max_val = sensor.getMaxValue()
 
-    # Si la lectura está en el máximo (o muy cerca), no hay obstáculo
-    if value >= max_val * 0.95:
+    # Sensor saturado (sin obstáculo detectable) → vía libre
+    if value >= saturation_threshold:
         return MAX_DISTANCE
 
+    # Obstáculo detectado: retornar la distancia real, acotada
     return max(0.002, min(MAX_DISTANCE, value))
 
 
@@ -105,11 +109,29 @@ def main():
     left_sensor.enable(TIME_STEP)
     right_sensor.enable(TIME_STEP)
 
-    # Mostrar rangos máximos de los sensores (para depuración)
-    print(f"Sensor frontal izq (ps7): maxRange = {frontal_left_sensor.getMaxValue():.4f} m")
-    print(f"Sensor frontal der (ps0): maxRange = {frontal_right_sensor.getMaxValue():.4f} m")
-    print(f"Sensor lateral izq (ps5): maxRange = {left_sensor.getMaxValue():.4f} m")
-    print(f"Sensor lateral der (ps2): maxRange = {right_sensor.getMaxValue():.4f} m")
+    # Determinar umbral de saturacion para cada sensor
+    # getMaxValue() puede retornar -1 si es desconocido → usamos 0.05 m
+    # (rango tipico de los sensores IR del e-puck en Webots)
+    def get_saturation_threshold(sensor):
+        mv = sensor.getMaxValue()
+        if mv <= 0:
+            mv = 0.05  # fallback para e-puck
+        return mv * SENSOR_SATURATION_RATIO
+
+    sat_thresholds = {
+        'FL': get_saturation_threshold(frontal_left_sensor),
+        'FR': get_saturation_threshold(frontal_right_sensor),
+        'L':  get_saturation_threshold(left_sensor),
+        'R':  get_saturation_threshold(right_sensor),
+    }
+
+    print("--- Diagnostico de sensores ---")
+    for name, s in [('ps7 FL', frontal_left_sensor), ('ps0 FR', frontal_right_sensor),
+                     ('ps5 L', left_sensor), ('ps2 R', right_sensor)]:
+        mv = s.getMaxValue()
+        print(f"  {name}: getMaxValue()={mv:.4f}, umbral saturacion={mv * SENSOR_SATURATION_RATIO if mv > 0 else 0.05 * SENSOR_SATURATION_RATIO:.4f}")
+    print("  (saturado = sin obstaculo → se retorna MAX_DISTANCE=0.30 m)")
+    print("-------------------------------")
 
     # -----------------------------------------------------------------------
     # Configuración de encoders (sensores de posición de las ruedas)
@@ -171,10 +193,10 @@ def main():
         raw_val_r = right_sensor.getValue()
 
         # Distancia procesada (MAX_DISTANCE si no hay obstaculo)
-        raw_frontal_left = get_sensor_distance(frontal_left_sensor)
-        raw_frontal_right = get_sensor_distance(frontal_right_sensor)
-        raw_left = get_sensor_distance(left_sensor)
-        raw_right = get_sensor_distance(right_sensor)
+        raw_frontal_left = get_sensor_distance(frontal_left_sensor, sat_thresholds['FL'])
+        raw_frontal_right = get_sensor_distance(frontal_right_sensor, sat_thresholds['FR'])
+        raw_left = get_sensor_distance(left_sensor, sat_thresholds['L'])
+        raw_right = get_sensor_distance(right_sensor, sat_thresholds['R'])
 
         # Medición frontal: el mínimo entre los dos sensores frontales
         z_frontal = min(raw_frontal_left, raw_frontal_right)
@@ -281,12 +303,11 @@ def main():
             'action': action
         })
 
-        # Log periódico en consola (cada 25 pasos para mas detalle)
-        if step_count <= 10 or step_count % 25 == 0:
-            print(f"[t={t:6.2f}s] sensor_raw=({raw_val_fl:.4f},{raw_val_fr:.4f})m | "
-                  f"conv={z_frontal:.4f}m | "
-                  f"filt={filtered_frontal:.4f}m | "
-                  f"kalman={d_est:.4f}m | K={K:.4f} | "
+        # Log periódico en consola
+        if step_count <= 5 or step_count % 50 == 0:
+            print(f"[t={t:6.2f}s] raw_val=({raw_val_fl:.4f},{raw_val_fr:.4f}) "
+                  f"conv=({raw_frontal_left:.4f},{raw_frontal_right:.4f}) "
+                  f"z={z_frontal:.4f} | kalman={d_est:.4f} K={K:.4f} | "
                   f"accion={action}")
 
     # -----------------------------------------------------------------------
