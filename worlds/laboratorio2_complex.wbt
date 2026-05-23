@@ -7,7 +7,7 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 
 WorldInfo {
   info [
-    "Laboratorio 2: Escenario COMPLEJO - pasillo con chicanas"
+    "Laboratorio 2: Escenario COMPLEJO - pasillo con dos giros"
     "Navegacion reactiva con filtrado y fusion de sensores"
     "ICI 4150 - Robotica y Sistemas Autonomos"
   ]
@@ -27,7 +27,7 @@ RectangleArena {
   wallHeight 0.05
 }
 E-puck {
-  translation -0.40 0 0
+  translation -0.42 -0.22 0
   rotation 0 0 1 0
   name "e-puck"
   controller "lab2_controller"
@@ -35,21 +35,17 @@ E-puck {
 }
 
 # ============================================================
-# ESCENARIO COMPLEJO: Pasillo estrecho con chicanas (slalom)
-# Arena 1x1 m. Paredes laterales forman un corredor de 20 cm.
-# Dentro del corredor hay muros alternados que obligan al robot
-# a hacer zigzag. Esto fuerza detecciones frontales y laterales,
-# demostrando la evasion de obstaculos en pasillos estrechos.
+# ESCENARIO COMPLEJO: Pasillo estrecho con dos giros
+# Arena 1x1 m. Corredor de 16 cm con dos cambios de direccion
+# (tramo horizontal, giro vertical, luego horizontal).
 # E-puck: ~7 cm diametro; sensores IR rango ~5 cm.
 # ============================================================
 
-# === PAREDES DEL CORREDOR (y = -0.10 e y = +0.10) ===
-# Corredor de 20 cm de ancho (robot 7 cm → ~6.5 cm holgura por lado)
-
-# --- Pared superior larga ---
+# === TRAMO 1: horizontal inferior ===
+# Limites y=-0.30 (abajo) y y=-0.14 (arriba)
 Solid {
-  translation 0.0 0.10 0.025
-  name "wall_top"
+  translation -0.25 -0.30 0.025
+  name "wall_h1_bottom"
   children [
     Shape {
       appearance PBRAppearance {
@@ -58,19 +54,17 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.90 0.02 0.05
+        size 0.40 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.90 0.02 0.05
+    size 0.40 0.02 0.05
   }
 }
-
-# --- Pared inferior larga ---
 Solid {
-  translation 0.0 -0.10 0.025
-  name "wall_bottom"
+  translation -0.25 -0.14 0.025
+  name "wall_h1_top"
   children [
     Shape {
       appearance PBRAppearance {
@@ -79,125 +73,137 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.90 0.02 0.05
+        size 0.40 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.90 0.02 0.05
+    size 0.40 0.02 0.05
   }
 }
 
-# === CHICANAS: Muros alternados dentro del corredor ===
-# Cada chicana bloquea ~50% del ancho del pasillo, dejando ~10 cm
-# de espacio libre (robot 7 cm → ~1.5 cm de margen por lado).
-
-# --- Chicana 1: Sale de la pared inferior, bloquea paso central-abajo ---
-# Deja paso libre arriba (y > 0)
+# === TRAMO 2: vertical ===
+# Limites x=-0.05 (izq) y x=0.11 (der)
 Solid {
-  translation -0.24 -0.05 0.025
-  name "chicane_1"
+  translation -0.05 0.04 0.025
+  name "wall_v_left"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.9 0.3 0.2
-        roughness 0.3
+        baseColor 0.45 0.45 0.50
+        roughness 0.6
         metalness 0.0
       }
       geometry Box {
-        size 0.02 0.12 0.05
+        size 0.02 0.36 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.02 0.12 0.05
+    size 0.02 0.36 0.05
+  }
+}
+Solid {
+  translation 0.11 0.04 0.025
+  name "wall_v_right"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.45 0.45 0.50
+        roughness 0.6
+        metalness 0.0
+      }
+      geometry Box {
+        size 0.02 0.36 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.02 0.36 0.05
   }
 }
 
-# --- Chicana 2: Sale de la pared superior, bloquea paso central-arriba ---
-# Deja paso libre abajo (y < 0)
+# === TRAMO 3: horizontal superior ===
+# Limites y=0.22 (abajo) y y=0.38 (arriba)
 Solid {
-  translation -0.08 0.05 0.025
-  name "chicane_2"
+  translation 0.15 0.22 0.025
+  name "wall_h2_bottom"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.2 0.5 0.9
-        roughness 0.3
+        baseColor 0.45 0.45 0.50
+        roughness 0.6
         metalness 0.0
       }
       geometry Box {
-        size 0.02 0.12 0.05
+        size 0.40 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.02 0.12 0.05
+    size 0.40 0.02 0.05
+  }
+}
+Solid {
+  translation 0.15 0.38 0.025
+  name "wall_h2_top"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.45 0.45 0.50
+        roughness 0.6
+        metalness 0.0
+      }
+      geometry Box {
+        size 0.40 0.02 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.40 0.02 0.05
   }
 }
 
-# --- Chicana 3: Sale de la pared inferior ---
-# Deja paso libre arriba
+# === Obstaculos internos (pilares) ===
 Solid {
-  translation 0.08 -0.05 0.025
-  name "chicane_3"
+  translation -0.25 -0.22 0.025
+  name "pillar_1"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.9 0.7 0.1
+        baseColor 0.9 0.6 0.1
         roughness 0.3
         metalness 0.0
       }
-      geometry Box {
-        size 0.02 0.12 0.05
+      geometry Cylinder {
+        height 0.05
+        radius 0.02
       }
     }
   ]
-  boundingObject Box {
-    size 0.02 0.12 0.05
+  boundingObject Cylinder {
+    height 0.05
+    radius 0.02
   }
 }
-
-# --- Chicana 4: Sale de la pared superior ---
-# Deja paso libre abajo
 Solid {
-  translation 0.24 0.05 0.025
-  name "chicane_4"
+  translation 0.03 0.08 0.025
+  name "pillar_2"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.2 0.8 0.3
+        baseColor 0.2 0.7 0.2
         roughness 0.3
         metalness 0.0
       }
-      geometry Box {
-        size 0.02 0.12 0.05
+      geometry Cylinder {
+        height 0.05
+        radius 0.02
       }
     }
   ]
-  boundingObject Box {
-    size 0.02 0.12 0.05
-  }
-}
-
-# --- Chicana 5: Sale de la pared inferior (ultima) ---
-# Deja paso libre arriba hacia la salida del corredor
-Solid {
-  translation 0.38 -0.05 0.025
-  name "chicane_5"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.7 0.2 0.7
-        roughness 0.3
-        metalness 0.0
-      }
-      geometry Box {
-        size 0.02 0.12 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.02 0.12 0.05
+  boundingObject Cylinder {
+    height 0.05
+    radius 0.02
   }
 }
