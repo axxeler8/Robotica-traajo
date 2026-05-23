@@ -199,21 +199,22 @@ Este diseño evalúa precisión de evitación en espacio abierto con
 obstáculos puntuales. Ideal para comparar señal cruda vs Kalman.
 
 ### Escenario Complejo (`worlds/laboratorio2_complex.wbt`)
-**Laberinto Progresivo** — Arena 1×1 m con **3 zonas de dificultad creciente**:
+**Laberinto Progresivo** — Arena 1×1 m con **3 zonas de dificultad creciente**
+y obstáculos **desplazados del centro** para guiar al robot, no bloquearlo:
 
-| Zona | Ancho | Obstáculos | Propósito |
-|------|-------|------------|-----------|
-| Zona 1 (x=-0.44 a -0.05) | 24 cm | Pilar central amarillo (r=3 cm) | Navegación cómoda, primera decisión |
-| Zona 2 (x=-0.05 a 0.30) | 18 cm | Caja azul derecha + caja roja izquierda | Espacio reducido, zigzag forzado |
-| Zona 3 (x=0.30 a 0.44) | 14 cm | Pared de cierre violeta + pilar verde de salida | Corredor estrecho, giro obligado |
+| Zona | x | Ancho | Obstáculos | Guía |
+|------|---|-------|------------|------|
+| Zona 1 | -0.44 a -0.10 | 24 cm | Pilar amarillo (r=2 cm, desplazado a y=+0.04) | Paso libre por la izquierda |
+| Zona 2 | -0.10 a 0.22 | 18 cm | Caja azul (izq) + caja roja (der) | Zigzag alternado |
+| Zona 3 | 0.22 a 0.44 | 14 cm | Pared de cierre violeta + pilar verde de salida | Giro forzado al final |
 
-Las paredes se estrechan progresivamente y la zona 3 termina con
-una pared que bloquea el paso, forzando al robot a buscar una salida
-alternativa. Este diseño permite analizar:
-- **Adaptación del Kalman** a condiciones cambiantes (ancho variable)
-- **Estabilidad del movimiento** en espacios confinados
-- **Efectividad de la fusión sensorial** bajo estrés (zona 3)
-- **Tasa de colisiones** por zona para comparación cuantitativa
+La pared superior es fija a y=+0.12 en todo el recorrido. La pared inferior
+se eleva gradualmente (y=-0.12 → -0.09 → -0.07) estrechando el corredor.
+El pilar de la Zona 1 está descentrado para dar un camino claro de 8 cm,
+evitando bloqueos. Este diseño permite analizar:
+- **Adaptación del Kalman** al estrechamiento progresivo
+- **Estabilidad** en espacios cada vez más confinados
+- **Efectividad de la fusión sensorial** bajo estrés creciente
 
 ### Análisis comparativo entre escenarios
 Para cada escenario se debe evaluar:
