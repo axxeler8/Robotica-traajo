@@ -7,7 +7,7 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 
 WorldInfo {
   info [
-    "Laboratorio 2: Escenario COMPLEJO - pasillo en Z con aperturas"
+    "Laboratorio 2: Escenario COMPLEJO - pasillo con chicanas abiertas"
     "Navegacion reactiva con filtrado y fusion de sensores"
     "ICI 4150 - Robotica y Sistemas Autonomos"
   ]
@@ -27,7 +27,7 @@ RectangleArena {
   wallHeight 0.05
 }
 E-puck {
-  translation -0.42 -0.22 0
+  translation -0.42 0 0
   rotation 0 0 1 0
   name "e-puck"
   controller "lab2_controller"
@@ -35,16 +35,15 @@ E-puck {
 }
 
 # ============================================================
-# ESCENARIO COMPLEJO: Pasillo en Z con aperturas
-# Arena 1x1 m. Corredor de 16 cm con dos giros y aperturas
-# explicitas para evitar bloqueos en las esquinas.
+# ESCENARIO COMPLEJO: Pasillo con chicanas abiertas
+# Arena 1x1 m. Corredor de 22 cm con chicanas alternadas.
+# El inicio queda libre para que el robot no se trabe.
 # ============================================================
 
-# === TRAMO 1: horizontal inferior ===
-# Limites y=-0.30 (abajo) y y=-0.14 (arriba)
+# === PAREDES DEL CORREDOR (y = -0.11 e y = +0.11) ===
 Solid {
-  translation -0.28 -0.30 0.025
-  name "wall_h1_bottom"
+  translation 0.0 0.11 0.025
+  name "wall_top"
   children [
     Shape {
       appearance PBRAppearance {
@@ -53,17 +52,17 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.34 0.02 0.05
+        size 0.90 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.34 0.02 0.05
+    size 0.90 0.02 0.05
   }
 }
 Solid {
-  translation -0.28 -0.14 0.025
-  name "wall_h1_top"
+  translation 0.0 -0.11 0.025
+  name "wall_bottom"
   children [
     Shape {
       appearance PBRAppearance {
@@ -72,137 +71,89 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.34 0.02 0.05
+        size 0.90 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.34 0.02 0.05
-  }
-}
-
-# === TRAMO 2: vertical (con apertura inferior) ===
-# Limites x=-0.12 (izq) y x=0.04 (der)
-Solid {
-  translation 0.04 0.02 0.025
-  name "wall_v_right"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.45 0.45 0.50
-        roughness 0.6
-        metalness 0.0
-      }
-      geometry Box {
-        size 0.02 0.32 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.02 0.32 0.05
-  }
-}
-Solid {
-  translation -0.12 0.08 0.025
-  name "wall_v_left_upper"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.45 0.45 0.50
-        roughness 0.6
-        metalness 0.0
-      }
-      geometry Box {
-        size 0.02 0.20 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.02 0.20 0.05
+    size 0.90 0.02 0.05
   }
 }
 
-# === TRAMO 3: horizontal superior (con apertura de entrada) ===
-# Limites y=0.20 (abajo) y y=0.36 (arriba)
+# === CHICANAS (inicio libre hasta x=-0.22) ===
 Solid {
-  translation 0.30 0.20 0.025
-  name "wall_h2_bottom"
+  translation -0.20 -0.06 0.025
+  name "chicane_1"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.45 0.45 0.50
-        roughness 0.6
-        metalness 0.0
-      }
-      geometry Box {
-        size 0.30 0.02 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.30 0.02 0.05
-  }
-}
-Solid {
-  translation 0.28 0.36 0.025
-  name "wall_h2_top"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.45 0.45 0.50
-        roughness 0.6
-        metalness 0.0
-      }
-      geometry Box {
-        size 0.34 0.02 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.34 0.02 0.05
-  }
-}
-
-# === Obstaculos internos (pilares) ===
-Solid {
-  translation -0.25 -0.22 0.025
-  name "pillar_1"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.9 0.6 0.1
+        baseColor 0.9 0.3 0.2
         roughness 0.3
         metalness 0.0
       }
-      geometry Cylinder {
-        height 0.05
-        radius 0.02
+      geometry Box {
+        size 0.02 0.10 0.05
       }
     }
   ]
-  boundingObject Cylinder {
-    height 0.05
-    radius 0.02
+  boundingObject Box {
+    size 0.02 0.10 0.05
   }
 }
 Solid {
-  translation -0.02 0.08 0.025
-  name "pillar_2"
+  translation -0.02 0.06 0.025
+  name "chicane_2"
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.2 0.7 0.2
+        baseColor 0.2 0.5 0.9
         roughness 0.3
         metalness 0.0
       }
-      geometry Cylinder {
-        height 0.05
-        radius 0.02
+      geometry Box {
+        size 0.02 0.10 0.05
       }
     }
   ]
-  boundingObject Cylinder {
-    height 0.05
-    radius 0.02
+  boundingObject Box {
+    size 0.02 0.10 0.05
+  }
+}
+Solid {
+  translation 0.16 -0.06 0.025
+  name "chicane_3"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.7 0.1
+        roughness 0.3
+        metalness 0.0
+      }
+      geometry Box {
+        size 0.02 0.10 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.02 0.10 0.05
+  }
+}
+Solid {
+  translation 0.34 0.06 0.025
+  name "chicane_4"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.2 0.8 0.3
+        roughness 0.3
+        metalness 0.0
+      }
+      geometry Box {
+        size 0.02 0.10 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.02 0.10 0.05
   }
 }

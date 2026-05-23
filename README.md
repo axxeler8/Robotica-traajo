@@ -180,17 +180,17 @@ else:                                         # Obstáculo detectado
 ## Escenarios de prueba
 
 ### Escenario Simple (`worlds/laboratorio2.wbt`)
-Arena de **1×1 m** con un **slalom abierto** de 3 pilares alternados.
-El robot parte desde x=-0.42 mirando hacia +X y debe corregir su rumbo
-suavemente para evitar cada pilar (izquierda-derecha-izquierda).
+Arena de **1×1 m** con **dos compuertas alternadas** y un pilar final.
+El robot parte desde x=-0.40 mirando hacia +X y debe:
+- Pasar por una compuerta inferior (deja paso por arriba)
+- Luego por una compuerta superior (deja paso por abajo)
+- Evitar un pilar centrado al final
+El diseno genera decisiones claras de izquierda/derecha sin saturar el espacio.
 
 ### Escenario Complejo (`worlds/laboratorio2_complex.wbt`)
-Arena de **1×1 m** con un **corredor en Z** de 16 cm, con **aperturas**
-en las esquinas para evitar bloqueos. El robot recorre:
-- Un tramo horizontal inferior
-- Un giro vertical con entrada abierta
-- Un tramo horizontal superior con apertura de entrada
-Incluye dos pilares internos para forzar correcciones finas. Este escenario demuestra:
+Arena de **1×1 m** con un **corredor de 22 cm** y **chicanas alternadas**.
+El inicio queda libre para evitar trabas y las chicanas fuerzan zigzag.
+Este escenario demuestra:
 - Navegacion en pasillos estrechos con cambios de direccion
 - Uso continuo de sensores frontales y laterales
 - Reaccion ante obstaculos internos dentro del corredor
