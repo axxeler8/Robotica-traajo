@@ -38,8 +38,9 @@ SAFE_DISTANCE = 0.040    # Umbral de seguridad en m
 CLEAR_DISTANCE = 0.050   # Distancia para considerar via libre (histeresis)
 CRITICAL_DISTANCE = 0.020 # Distancia critica para giro de emergencia (m)
 MAX_DISTANCE = 0.30      # Distancia máxima considerada (sin obstáculo)
-STEER_GAIN = 3.0         # Ganancia de corrección lateral al avanzar
-STEER_MAX = 1.2          # Limite de corrección lateral (rad/s)
+STEER_GAIN = 5.0         # Ganancia de corrección lateral al avanzar
+STEER_MAX = 1.8          # Limite de corrección lateral (rad/s)
+SIDE_CRITICAL = 0.015    # Distancia lateral critica (m) - fuerza correccion fuerte
 AVOID_TURN_STEPS = int(0.30 / Ts)  # Duracion de giro al evitar obstaculo
 INNOVATION_THRESHOLD = 0.10  # Si la diferencia entre medición y predicción
                               # supera este umbral, se resetea el Kalman
@@ -324,12 +325,14 @@ def main():
         # -------------------------------------------------------------------
         # Usar la medida mas conservadora entre Kalman y medicion directa
         front_dist = min(d_est, z_frontal)
+        # Peligro lateral: el sensor que ve mas cerca
+        side_danger = min(raw_left, raw_right)
 
         # Direccion de giro: si el obstaculo esta a la izquierda, girar a la derecha
         turn_dir = 1 if raw_left < raw_right else -1  # 1=right, -1=left
 
         # Si estamos demasiado cerca, activar secuencia de evitacion
-        if front_dist < CRITICAL_DISTANCE:
+        if front_dist < CRITICAL_DISTANCE or side_danger < SIDE_CRITICAL:
             avoid_steps = max(avoid_steps, AVOID_TURN_STEPS * 2)
         elif front_dist < SAFE_DISTANCE:
             avoid_steps = max(avoid_steps, AVOID_TURN_STEPS)
@@ -340,10 +343,19 @@ def main():
             right_motor.setVelocity(-TURN_SPEED * turn_dir)
             action = "TURN_RIGHT" if turn_dir == 1 else "TURN_LEFT"
         else:
-            # Avance con correccion lateral suave
+            # Avance con correccion lateral proporcional al peligro
             speed_scale = min(1.0, front_dist / CLEAR_DISTANCE) if CLEAR_DISTANCE > 0 else 1.0
             base_speed = FORWARD_SPEED * speed_scale
-            steer = (raw_right - raw_left) * STEER_GAIN
+            
+            # Correccion lateral: mas fuerte cuanto mas cerca el obstaculo lateral
+            # Si un lado esta libre (MAX_DISTANCE) y el otro cerca, la diferencia es grande
+            raw_steer = raw_right - raw_left
+            # Refuerzo proporcional a la proximidad del obstaculo mas cercano
+            if side_danger < MAX_DISTANCE:
+                proximity_factor = max(0.0, 1.0 - side_danger / CLEAR_DISTANCE)
+                raw_steer = raw_steer * (1.0 + proximity_factor * 3.0)
+            
+            steer = raw_steer * STEER_GAIN
             steer = max(-STEER_MAX, min(STEER_MAX, steer))
 
             left_speed = base_speed + steer
@@ -363,6 +375,7 @@ def main():
             'sensor_raw_FR': round(raw_val_fr, 6),
             'raw_frontal': round(z_frontal, 6),
             'front_dist': round(front_dist, 6),
+            'side_danger': round(side_danger, 6),
             'filtered_frontal': round(filtered_frontal, 6),
             'kalman_estimate': round(d_est, 6),
             'raw_left': round(raw_left, 6),
@@ -380,7 +393,7 @@ def main():
         if step_count <= 5 or step_count % 50 == 0:
             print(f"[t={t:6.2f}s] raw_val=({raw_val_fl:.4f},{raw_val_fr:.4f}) "
                   f"conv=({raw_frontal_left:.4f},{raw_frontal_right:.4f}) "
-                  f"z={z_frontal:.4f} front={front_dist:.4f} | "
+                  f"z={z_frontal:.4f} front={front_dist:.4f} side={side_danger:.4f} | "
                   f"kalman={d_est:.4f} K={K:.4f} | "
                   f"avoid={avoid_steps} accion={action}")
 
