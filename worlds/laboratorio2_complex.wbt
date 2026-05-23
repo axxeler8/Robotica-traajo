@@ -35,17 +35,16 @@ E-puck {
 }
 
 # ============================================================
-# ESCENARIO COMPLEJO: Pasillo estrecho con múltiples obstáculos
+# ESCENARIO COMPLEJO: Pasillo estrecho con multiples obstaculos
+# NOTA: Sensores IR del e-puck tienen rango maximo ~5 cm.
+# Paredes a 6 cm del centro (corredor de 12 cm) para que los
+# sensores laterales las detecten (robot borde ~3.5 cm del centro).
 # ============================================================
-# El robot inicia en (0,0) mirando hacia +x.
-# Se construye un pasillo estrecho (~20 cm de ancho) flanqueado por
-# paredes, con obstáculos adicionales dentro y fuera del pasillo.
 
-# --- Pared izquierda del pasillo (segmentada) ---
-# Segmento 1: x=0.05 a x=0.25
+# --- Pared izquierda del pasillo (y = -0.06) ---
 Solid {
-  translation 0.15 -0.12 0.04
-  name "wall_left_1"
+  translation 0.20 -0.06 0.025
+  name "wall_left"
   children [
     Shape {
       appearance PBRAppearance {
@@ -53,19 +52,19 @@ Solid {
         roughness 0.6
       }
       geometry Box {
-        size 0.20 0.03 0.08
+        size 0.40 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.20 0.03 0.08
+    size 0.40 0.02 0.05
   }
 }
 
-# Segmento 2: x=0.30 a x=0.55
+# --- Pared derecha del pasillo (y = +0.06) ---
 Solid {
-  translation 0.425 -0.12 0.04
-  name "wall_left_2"
+  translation 0.20 0.06 0.025
+  name "wall_right"
   children [
     Shape {
       appearance PBRAppearance {
@@ -73,60 +72,19 @@ Solid {
         roughness 0.6
       }
       geometry Box {
-        size 0.25 0.03 0.08
+        size 0.40 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.25 0.03 0.08
+    size 0.40 0.02 0.05
   }
 }
 
-# --- Pared derecha del pasillo (segmentada) ---
-# Segmento 1: x=0.05 a x=0.25
+# --- Obstaculo 1: Cilindro centrado en el pasillo (a 10 cm) ---
 Solid {
-  translation 0.15 0.12 0.04
-  name "wall_right_1"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.5 0.5 0.5
-        roughness 0.6
-      }
-      geometry Box {
-        size 0.20 0.03 0.08
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.20 0.03 0.08
-  }
-}
-
-# Segmento 2: x=0.30 a x=0.60
-Solid {
-  translation 0.45 0.12 0.04
-  name "wall_right_2"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.5 0.5 0.5
-        roughness 0.6
-      }
-      geometry Box {
-        size 0.30 0.03 0.08
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.30 0.03 0.08
-  }
-}
-
-# --- Obstáculo central dentro del pasillo (bloquea parcialmente) ---
-Solid {
-  translation 0.30 0.0 0.03
-  name "obstacle_mid_1"
+  translation 0.10 0 0.025
+  name "obs1_center"
   children [
     Shape {
       appearance PBRAppearance {
@@ -134,21 +92,21 @@ Solid {
         roughness 0.3
       }
       geometry Cylinder {
-        height 0.06
-        radius 0.04
+        height 0.05
+        radius 0.025
       }
     }
   ]
   boundingObject Cylinder {
-    height 0.06
-    radius 0.04
+    height 0.05
+    radius 0.025
   }
 }
 
-# --- Segundo obstáculo dentro del pasillo ---
+# --- Obstaculo 2: Caja desplazada a la derecha (a 20 cm) ---
 Solid {
-  translation 0.50 -0.03 0.04
-  name "obstacle_mid_2"
+  translation 0.20 0.03 0.025
+  name "obs2_right"
   children [
     Shape {
       appearance PBRAppearance {
@@ -156,19 +114,19 @@ Solid {
         roughness 0.3
       }
       geometry Box {
-        size 0.05 0.05 0.08
+        size 0.04 0.04 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.05 0.05 0.08
+    size 0.04 0.04 0.05
   }
 }
 
-# --- Obstáculo más allá del pasillo (a la derecha) ---
+# --- Obstaculo 3: Caja desplazada a la izquierda (a 30 cm) ---
 Solid {
-  translation 0.65 -0.20 0.04
-  name "obstacle_end_1"
+  translation 0.30 -0.03 0.025
+  name "obs3_left"
   children [
     Shape {
       appearance PBRAppearance {
@@ -176,53 +134,53 @@ Solid {
         roughness 0.4
       }
       geometry Box {
-        size 0.08 0.08 0.08
+        size 0.04 0.04 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.08 0.08 0.08
+    size 0.04 0.04 0.05
   }
 }
 
-# --- Obstáculo a la izquierda después del pasillo ---
+# --- Obstaculo 4: Cilindro al frente (a 40 cm) ---
 Solid {
-  translation 0.70 0.20 0.05
-  name "obstacle_end_2"
+  translation 0.40 0 0.025
+  name "obs4_front"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.7 0.2
         roughness 0.4
       }
-      geometry Box {
-        size 0.10 0.06 0.10
+      geometry Cylinder {
+        height 0.05
+        radius 0.025
       }
     }
   ]
-  boundingObject Box {
-    size 0.10 0.06 0.10
+  boundingObject Cylinder {
+    height 0.05
+    radius 0.025
   }
 }
 
-# --- Obstáculo adicional al fondo ---
+# --- Obstaculo 5: Caja al final del pasillo (a 48 cm) ---
 Solid {
-  translation 0.80 -0.05 0.03
-  name "obstacle_far"
+  translation 0.48 0 0.025
+  name "obs5_end"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.7 0.2 0.7
         roughness 0.4
       }
-      geometry Cylinder {
-        height 0.06
-        radius 0.035
+      geometry Box {
+        size 0.05 0.05 0.05
       }
     }
   ]
-  boundingObject Cylinder {
-    height 0.06
-    radius 0.035
+  boundingObject Box {
+    size 0.05 0.05 0.05
   }
 }

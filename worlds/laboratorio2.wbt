@@ -34,13 +34,15 @@ E-puck {
   customData "simple"
 }
 # ============================================================
-# ESCENARIO SIMPLE: 3 obstáculos dispersos
+# ESCENARIO SIMPLE: 3 obstaculos en la trayectoria del robot
+# NOTA: Los sensores IR del e-puck tienen rango maximo ~5 cm.
+# Todos los obstaculos estan a <= 5 cm de la trayectoria.
 # ============================================================
 
-# Obstáculo 1: Caja al frente (a ~35 cm del origen)
+# Obstaculo 1: Caja al frente (a 10 cm del origen)
 Solid {
-  translation 0.35 0 0.04
-  name "obstacle_box_1"
+  translation 0.10 0 0.025
+  name "obs1_front"
   children [
     Shape {
       appearance PBRAppearance {
@@ -49,19 +51,19 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.08 0.08 0.08
+        size 0.04 0.04 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.08 0.08 0.08
+    size 0.04 0.04 0.05
   }
 }
 
-# Obstáculo 2: Caja a la derecha
+# Obstaculo 2: Caja a la derecha de la trayectoria (a 18 cm)
 Solid {
-  translation 0.15 -0.25 0.05
-  name "obstacle_box_2"
+  translation 0.18 0.04 0.025
+  name "obs2_right"
   children [
     Shape {
       appearance PBRAppearance {
@@ -70,19 +72,19 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.10 0.06 0.10
+        size 0.04 0.04 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.10 0.06 0.10
+    size 0.04 0.04 0.05
   }
 }
 
-# Obstáculo 3: Cilindro a la izquierda (más adelante)
+# Obstaculo 3: Cilindro al frente, centrado (a 28 cm)
 Solid {
-  translation 0.40 0.20 0.03
-  name "obstacle_cylinder_3"
+  translation 0.28 0 0.025
+  name "obs3_cylinder"
   children [
     Shape {
       appearance PBRAppearance {
@@ -91,13 +93,13 @@ Solid {
         metalness 0.0
       }
       geometry Cylinder {
-        height 0.06
-        radius 0.04
+        height 0.05
+        radius 0.025
       }
     }
   ]
   boundingObject Cylinder {
-    height 0.06
-    radius 0.04
+    height 0.05
+    radius 0.025
   }
 }

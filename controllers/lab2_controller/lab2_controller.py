@@ -162,8 +162,15 @@ def main():
         t = step_count * Ts
 
         # -------------------------------------------------------------------
-        # 1. Lectura de sensores de distancia (crudos)
+        # 1. Lectura de sensores de distancia
         # -------------------------------------------------------------------
+        # Valor real del sensor (en metros, directo de Webots)
+        raw_val_fl = frontal_left_sensor.getValue()
+        raw_val_fr = frontal_right_sensor.getValue()
+        raw_val_l = left_sensor.getValue()
+        raw_val_r = right_sensor.getValue()
+
+        # Distancia procesada (MAX_DISTANCE si no hay obstaculo)
         raw_frontal_left = get_sensor_distance(frontal_left_sensor)
         raw_frontal_right = get_sensor_distance(frontal_right_sensor)
         raw_left = get_sensor_distance(left_sensor)
@@ -258,11 +265,15 @@ def main():
         data_log.append({
             'step': step_count,
             'time': round(t, 4),
+            'sensor_raw_FL': round(raw_val_fl, 6),
+            'sensor_raw_FR': round(raw_val_fr, 6),
             'raw_frontal': round(z_frontal, 6),
             'filtered_frontal': round(filtered_frontal, 6),
             'kalman_estimate': round(d_est, 6),
             'raw_left': round(raw_left, 6),
             'raw_right': round(raw_right, 6),
+            'sensor_raw_L': round(raw_val_l, 6),
+            'sensor_raw_R': round(raw_val_r, 6),
             'encoder_L': round(curr_left_pos, 6),
             'encoder_R': round(curr_right_pos, 6),
             'delta_s': round(delta_s, 6),
@@ -270,12 +281,13 @@ def main():
             'action': action
         })
 
-        # Log periódico en consola
-        if step_count % 50 == 0:
-            print(f"[t={t:6.2f}s] raw={z_frontal:.4f}m | "
+        # Log periódico en consola (cada 25 pasos para mas detalle)
+        if step_count <= 10 or step_count % 25 == 0:
+            print(f"[t={t:6.2f}s] sensor_raw=({raw_val_fl:.4f},{raw_val_fr:.4f})m | "
+                  f"conv={z_frontal:.4f}m | "
                   f"filt={filtered_frontal:.4f}m | "
                   f"kalman={d_est:.4f}m | K={K:.4f} | "
-                  f"d_s={delta_s:.4f}m | accion={action}")
+                  f"accion={action}")
 
     # -----------------------------------------------------------------------
     # Guardar datos en CSV (nombre según escenario)
