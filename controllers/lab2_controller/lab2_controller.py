@@ -138,8 +138,10 @@ def main():
     # -----------------------------------------------------------------------
     # Bucle principal
     # -----------------------------------------------------------------------
+    scenario = robot.getCustomData() or "default"
     print("=" * 60)
     print("LABORATORIO 2: Navegación Reactiva con Kalman")
+    print(f"Escenario: {scenario.upper()}")
     print(f"Ts = {Ts:.3f} s,  fs = {fs:.1f} Hz,  TIME_STEP = {TIME_STEP} ms")
     print(f"Safe distance = {SAFE_DISTANCE:.3f} m")
     print(f"Kalman: R = {R:.6f}, Q = {Q:.6f}")
@@ -258,9 +260,10 @@ def main():
                   f"d_s={delta_s:.4f}m | accion={action}")
 
     # -----------------------------------------------------------------------
-    # Guardar datos en CSV
+    # Guardar datos en CSV (nombre según escenario)
     # -----------------------------------------------------------------------
-    csv_path = os.path.join(os.path.dirname(__file__), 'lab2_data.csv')
+    csv_filename = f"lab2_data_{scenario}.csv"
+    csv_path = os.path.join(os.path.dirname(__file__), csv_filename)
     if data_log:
         keys = data_log[0].keys()
         with open(csv_path, 'w', newline='') as f:

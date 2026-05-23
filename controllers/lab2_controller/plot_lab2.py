@@ -4,9 +4,10 @@ Lee el archivo CSV generado por lab2_controller.py y genera gráficos
 comparativos de las señales cruda, filtrada y estimada por Kalman.
 
 Uso:
-    python3 plot_lab2.py [ruta/al/lab2_data.csv]
-
-Si no se especifica ruta, busca lab2_data.csv en el mismo directorio.
+    python3 plot_lab2.py simple          # Analiza escenario simple
+    python3 plot_lab2.py complex         # Analiza escenario complejo
+    python3 plot_lab2.py                 # Analiza ambos si existen
+    python3 plot_lab2.py ruta/al/archivo.csv  # Archivo específico
 """
 
 import csv
@@ -41,7 +42,7 @@ def load_data(csv_path):
     return data
 
 
-def plot_comparison(data, output_dir):
+def plot_comparison(data, output_dir, prefix="", scenario_label=""):
     """Genera gráficos comparativos de las señales."""
     t = np.array(data['time'])
     raw = np.array(data['raw_frontal'])
@@ -52,11 +53,13 @@ def plot_comparison(data, output_dir):
     left = np.array(data['raw_left'])
     right = np.array(data['raw_right'])
 
+    title_suffix = f" - Escenario {scenario_label}" if scenario_label else ""
+
     # ------------------------------------------------------------------
     # Figura 1: Comparación de señales frontales
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
-    fig.suptitle('Laboratorio 2 - Comparación de Señales de Distancia Frontal',
+    fig.suptitle(f'Laboratorio 2 - Comparación de Señales de Distancia Frontal{title_suffix}',
                  fontsize=14, fontweight='bold')
 
     # Subplot 1: Señal cruda
@@ -85,9 +88,9 @@ def plot_comparison(data, output_dir):
     axes[2].set_ylim(0, 0.35)
 
     plt.tight_layout()
-    fig.savefig(os.path.join(output_dir, 'comparacion_senales.png'), dpi=150)
+    fig.savefig(os.path.join(output_dir, f'{prefix}comparacion_senales.png'), dpi=150)
     plt.close(fig)
-    print(f"Gráfico guardado: comparacion_senales.png")
+    print(f"Gráfico guardado: {prefix}comparacion_senales.png")
 
     # ------------------------------------------------------------------
     # Figura 2: Superposición de las tres señales
@@ -98,14 +101,14 @@ def plot_comparison(data, output_dir):
     ax.plot(t, kalman, 'r-', alpha=0.9, linewidth=1.2, label='Kalman')
     ax.set_xlabel('Tiempo (s)')
     ax.set_ylabel('Distancia (m)')
-    ax.set_title('Superposición: Señal cruda vs Filtrada vs Kalman', fontweight='bold')
+    ax.set_title(f'Superposición: Señal cruda vs Filtrada vs Kalman{title_suffix}', fontweight='bold')
     ax.legend()
     ax.grid(True, alpha=0.3)
     ax.set_ylim(0, 0.35)
     plt.tight_layout()
-    fig.savefig(os.path.join(output_dir, 'superposicion_senales.png'), dpi=150)
+    fig.savefig(os.path.join(output_dir, f'{prefix}superposicion_senales.png'), dpi=150)
     plt.close(fig)
-    print(f"Gráfico guardado: superposicion_senales.png")
+    print(f"Gráfico guardado: {prefix}superposicion_senales.png")
 
     # ------------------------------------------------------------------
     # Figura 3: Ganancia de Kalman en el tiempo
@@ -114,18 +117,18 @@ def plot_comparison(data, output_dir):
     ax.plot(t, gain, 'm-', linewidth=0.8)
     ax.set_xlabel('Tiempo (s)')
     ax.set_ylabel('Ganancia K')
-    ax.set_title('Evolución de la Ganancia de Kalman', fontweight='bold')
+    ax.set_title(f'Evolución de la Ganancia de Kalman{title_suffix}', fontweight='bold')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    fig.savefig(os.path.join(output_dir, 'ganancia_kalman.png'), dpi=150)
+    fig.savefig(os.path.join(output_dir, f'{prefix}ganancia_kalman.png'), dpi=150)
     plt.close(fig)
-    print(f"Gráfico guardado: ganancia_kalman.png")
+    print(f"Gráfico guardado: {prefix}ganancia_kalman.png")
 
     # ------------------------------------------------------------------
     # Figura 4: Sensores laterales + desplazamiento
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
-    fig.suptitle('Sensores Laterales y Desplazamiento del Robot', fontweight='bold')
+    fig.suptitle(f'Sensores Laterales y Desplazamiento del Robot{title_suffix}', fontweight='bold')
 
     axes[0].plot(t, left, 'c-', alpha=0.7, linewidth=0.8, label='Sensor izquierdo')
     axes[0].plot(t, right, 'y-', alpha=0.7, linewidth=0.8, label='Sensor derecho')
@@ -141,28 +144,71 @@ def plot_comparison(data, output_dir):
     axes[1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    fig.savefig(os.path.join(output_dir, 'laterales_y_desplazamiento.png'), dpi=150)
+    fig.savefig(os.path.join(output_dir, f'{prefix}laterales_y_desplazamiento.png'), dpi=150)
     plt.close(fig)
-    print(f"Gráfico guardado: laterales_y_desplazamiento.png")
+    print(f"Gráfico guardado: {prefix}laterales_y_desplazamiento.png")
 
 
 def main():
-    if len(sys.argv) > 1:
-        csv_path = sys.argv[1]
-    else:
-        csv_path = os.path.join(os.path.dirname(__file__), 'lab2_data.csv')
+    base_dir = os.path.dirname(os.path.abspath(__file__))
 
-    if not os.path.exists(csv_path):
-        print(f"ERROR: No se encuentra el archivo {csv_path}")
+    # Determinar qué escenarios procesar
+    scenarios_to_process = []
+
+    if len(sys.argv) > 1:
+        arg = sys.argv[1].lower()
+        if arg in ('simple', 'complex'):
+            # Escenario específico
+            csv_path = os.path.join(base_dir, f'lab2_data_{arg}.csv')
+            if os.path.exists(csv_path):
+                scenarios_to_process.append((arg, csv_path))
+            else:
+                print(f"ERROR: No se encuentra {csv_path}")
+                print("Ejecuta primero la simulación en Webots con ese escenario.")
+                sys.exit(1)
+        else:
+            # Ruta explícita a un CSV
+            csv_path = arg
+            if os.path.exists(csv_path):
+                # Extraer nombre del escenario de la ruta
+                fname = os.path.basename(csv_path)
+                label = fname.replace('lab2_data_', '').replace('.csv', '')
+                scenarios_to_process.append((label, csv_path))
+            else:
+                print(f"ERROR: No se encuentra {csv_path}")
+                sys.exit(1)
+    else:
+        # Sin argumentos: buscar ambos escenarios
+        for sc in ['simple', 'complex']:
+            csv_path = os.path.join(base_dir, f'lab2_data_{sc}.csv')
+            if os.path.exists(csv_path):
+                scenarios_to_process.append((sc, csv_path))
+
+        if not scenarios_to_process:
+            # Fallback: buscar CSV genérico
+            csv_path = os.path.join(base_dir, 'lab2_data.csv')
+            if os.path.exists(csv_path):
+                scenarios_to_process.append(('default', csv_path))
+
+    if not scenarios_to_process:
+        print("ERROR: No se encontraron archivos CSV.")
         print("Ejecuta primero la simulación en Webots para generar los datos.")
+        print("\nUso: python3 plot_lab2.py [simple|complex|csv_path]")
         sys.exit(1)
 
-    output_dir = os.path.dirname(csv_path)
-    print(f"Cargando datos desde: {csv_path}")
-    data = load_data(csv_path)
-    print(f"Muestras cargadas: {len(data['time'])}")
+    for scenario_name, csv_path in scenarios_to_process:
+        print(f"\n{'='*55}")
+        print(f"Procesando escenario: {scenario_name.upper()}")
+        print(f"Archivo: {csv_path}")
+        print(f"{'='*55}")
 
-    plot_comparison(data, output_dir)
+        data = load_data(csv_path)
+        print(f"Muestras cargadas: {len(data['time'])}")
+
+        # Guardar gráficos con prefijo del escenario
+        prefix = f"{scenario_name}_"
+        plot_comparison(data, base_dir, prefix=prefix, scenario_label=scenario_name.upper())
+
     print("\n¡Análisis completado!")
 
 

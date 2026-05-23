@@ -155,27 +155,56 @@ else:
 - `fs = 31.25 Hz`
 - Duración de simulación: 120 s (~3750 muestras)
 
+## Escenarios de prueba
+
+### Escenario Simple (`worlds/laboratorio2.wbt`)
+Entorno con **3 obstáculos dispersos** (2 cajas + 1 cilindro) en una arena de 2×2 m.
+El robot tiene espacio amplio para navegar y los obstáculos están separados,
+lo que permite evaluar el comportamiento base de la navegación reactiva.
+
+### Escenario Complejo (`worlds/laboratorio2_complex.wbt`)
+Entorno con **pasillo estrecho** (~20 cm de ancho) flanqueado por paredes
+segmentadas, con **5 obstáculos adicionales** dentro y fuera del pasillo.
+Este escenario fuerza al robot a:
+- Navegar en espacios confinados
+- Realizar múltiples giros para evitar colisiones
+- Tomar decisiones frecuentes basadas en las estimaciones del Kalman
+
+### Análisis comparativo entre escenarios
+Para cada escenario se debe evaluar:
+- **Estabilidad del movimiento**: qué tan suave es la trayectoria
+- **Cantidad de giros innecesarios**: frecuencia de cambios de dirección
+- **Capacidad para evitar colisiones**: si el robot choca o roza obstáculos
+- **Diferencias entre mediciones**: cruda vs filtrada vs Kalman
+
 ## Cómo ejecutar
 
 1. Abrir Webots
-2. `File → Open World...` → `worlds/laboratorio2.wbt`
-3. La simulación ejecuta la navegación reactiva automáticamente
-4. Los datos se guardan en `controllers/lab2_controller/lab2_data.csv`
+2. **Escenario simple**: `File → Open World...` → `worlds/laboratorio2.wbt`
+3. **Escenario complejo**: `File → Open World...` → `worlds/laboratorio2_complex.wbt`
+4. La simulación ejecuta la navegación reactiva automáticamente (120 s)
+5. Los datos se guardan como `lab2_data_simple.csv` o `lab2_data_complex.csv`
 
 ## Análisis de resultados
 
-Después de la simulación, generar los gráficos comparativos:
+Después de ejecutar AMBAS simulaciones, generar los gráficos:
 
 ```bash
 cd controllers/lab2_controller
+
+# Analizar ambos escenarios
 python3 plot_lab2.py
+
+# O uno específico
+python3 plot_lab2.py simple
+python3 plot_lab2.py complex
 ```
 
-Esto genera:
-- `comparacion_senales.png` — Señal cruda, filtrada y Kalman
-- `superposicion_senales.png` — Las tres señales superpuestas
-- `ganancia_kalman.png` — Evolución de la ganancia K
-- `laterales_y_desplazamiento.png` — Sensores laterales y Δs
+Para cada escenario se generan 4 gráficos con prefijo `simple_` o `complex_`:
+- `{escenario}_comparacion_senales.png` — Señal cruda, filtrada y Kalman
+- `{escenario}_superposicion_senales.png` — Las tres señales superpuestas
+- `{escenario}_ganancia_kalman.png` — Evolución de la ganancia K
+- `{escenario}_laterales_y_desplazamiento.png` — Sensores laterales y Δs
 
 ## Estructura del Proyecto (completa)
 
@@ -184,7 +213,8 @@ Robotica/
 ├── README.md
 ├── worlds/
 │   ├── laboratorio1.wbt
-│   └── laboratorio2.wbt
+│   ├── laboratorio2.wbt              ← Escenario SIMPLE
+│   └── laboratorio2_complex.wbt      ← Escenario COMPLEJO
 ├── controllers/
 │   ├── lab1_controller/
 │   │   └── lab1_controller.py

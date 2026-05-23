@@ -1,0 +1,228 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+
+WorldInfo {
+  info [
+    "Laboratorio 2: Escenario COMPLEJO - pasillo estrecho y múltiples obstáculos"
+    "Navegación reactiva con filtrado y fusión de sensores"
+    "ICI 4150 - Robótica y Sistemas Autónomos"
+  ]
+  title "Lab2 - Escenario Complejo"
+  basicTimeStep 32
+}
+Viewpoint {
+  orientation -0.5773 0.5773 0.5773 2.094
+  position 0 0 2.5
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  floorSize 2 2
+  wallHeight 0.05
+}
+E-puck {
+  translation 0 0 0
+  rotation 0 0 1 0
+  name "e-puck"
+  controller "lab2_controller"
+  customData "complex"
+}
+
+# ============================================================
+# ESCENARIO COMPLEJO: Pasillo estrecho con múltiples obstáculos
+# ============================================================
+# El robot inicia en (0,0) mirando hacia +x.
+# Se construye un pasillo estrecho (~20 cm de ancho) flanqueado por
+# paredes, con obstáculos adicionales dentro y fuera del pasillo.
+
+# --- Pared izquierda del pasillo (segmentada) ---
+# Segmento 1: x=0.05 a x=0.25
+Solid {
+  translation 0.15 -0.12 0.04
+  name "wall_left_1"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.5 0.5 0.5
+        roughness 0.6
+      }
+      geometry Box {
+        size 0.20 0.03 0.08
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.20 0.03 0.08
+  }
+}
+
+# Segmento 2: x=0.30 a x=0.55
+Solid {
+  translation 0.425 -0.12 0.04
+  name "wall_left_2"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.5 0.5 0.5
+        roughness 0.6
+      }
+      geometry Box {
+        size 0.25 0.03 0.08
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.25 0.03 0.08
+  }
+}
+
+# --- Pared derecha del pasillo (segmentada) ---
+# Segmento 1: x=0.05 a x=0.25
+Solid {
+  translation 0.15 0.12 0.04
+  name "wall_right_1"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.5 0.5 0.5
+        roughness 0.6
+      }
+      geometry Box {
+        size 0.20 0.03 0.08
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.20 0.03 0.08
+  }
+}
+
+# Segmento 2: x=0.30 a x=0.60
+Solid {
+  translation 0.45 0.12 0.04
+  name "wall_right_2"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.5 0.5 0.5
+        roughness 0.6
+      }
+      geometry Box {
+        size 0.30 0.03 0.08
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.30 0.03 0.08
+  }
+}
+
+# --- Obstáculo central dentro del pasillo (bloquea parcialmente) ---
+Solid {
+  translation 0.30 0.0 0.03
+  name "obstacle_mid_1"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.6 0.1
+        roughness 0.3
+      }
+      geometry Cylinder {
+        height 0.06
+        radius 0.04
+      }
+    }
+  ]
+  boundingObject Cylinder {
+    height 0.06
+    radius 0.04
+  }
+}
+
+# --- Segundo obstáculo dentro del pasillo ---
+Solid {
+  translation 0.50 -0.03 0.04
+  name "obstacle_mid_2"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.3 0.1
+        roughness 0.3
+      }
+      geometry Box {
+        size 0.05 0.05 0.08
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.05 0.05 0.08
+  }
+}
+
+# --- Obstáculo más allá del pasillo (a la derecha) ---
+Solid {
+  translation 0.65 -0.20 0.04
+  name "obstacle_end_1"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.2 0.2 0.8
+        roughness 0.4
+      }
+      geometry Box {
+        size 0.08 0.08 0.08
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.08 0.08 0.08
+  }
+}
+
+# --- Obstáculo a la izquierda después del pasillo ---
+Solid {
+  translation 0.70 0.20 0.05
+  name "obstacle_end_2"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.2 0.7 0.2
+        roughness 0.4
+      }
+      geometry Box {
+        size 0.10 0.06 0.10
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.10 0.06 0.10
+  }
+}
+
+# --- Obstáculo adicional al fondo ---
+Solid {
+  translation 0.80 -0.05 0.03
+  name "obstacle_far"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.7 0.2 0.7
+        roughness 0.4
+      }
+      geometry Cylinder {
+        height 0.06
+        radius 0.035
+      }
+    }
+  ]
+  boundingObject Cylinder {
+    height 0.06
+    radius 0.035
+  }
+}

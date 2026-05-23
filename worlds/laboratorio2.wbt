@@ -7,10 +7,11 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 
 WorldInfo {
   info [
-    "Laboratorio 2: Navegación reactiva con filtrado y fusión de sensores"
+    "Laboratorio 2: Escenario SIMPLE - pocos obstáculos"
+    "Navegación reactiva con filtrado y fusión de sensores"
     "ICI 4150 - Robótica y Sistemas Autónomos"
   ]
-  title "Lab2 - Navegación Reactiva con Kalman"
+  title "Lab2 - Escenario Simple"
   basicTimeStep 32
 }
 Viewpoint {
@@ -23,10 +24,80 @@ TexturedBackgroundLight {
 }
 RectangleArena {
   floorSize 2 2
+  wallHeight 0.05
 }
 E-puck {
   translation 0 0 0
   rotation 0 0 1 0
   name "e-puck"
   controller "lab2_controller"
+  customData "simple"
+}
+# ============================================================
+# ESCENARIO SIMPLE: 3 obstáculos dispersos
+# ============================================================
+
+# Obstáculo 1: Caja al frente (a ~35 cm del origen)
+Solid {
+  translation 0.35 0 0.04
+  name "obstacle_box_1"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.3 0.3
+        roughness 0.4
+        metalness 0.0
+      }
+      geometry Box {
+        size 0.08 0.08 0.08
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.08 0.08 0.08
+  }
+}
+
+# Obstáculo 2: Caja a la derecha
+Solid {
+  translation 0.15 -0.25 0.05
+  name "obstacle_box_2"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.3 0.3 0.9
+        roughness 0.4
+        metalness 0.0
+      }
+      geometry Box {
+        size 0.10 0.06 0.10
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.10 0.06 0.10
+  }
+}
+
+# Obstáculo 3: Cilindro a la izquierda (más adelante)
+Solid {
+  translation 0.40 0.20 0.03
+  name "obstacle_cylinder_3"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.3 0.8 0.3
+        roughness 0.4
+        metalness 0.0
+      }
+      geometry Cylinder {
+        height 0.06
+        radius 0.04
+      }
+    }
+  ]
+  boundingObject Cylinder {
+    height 0.06
+    radius 0.04
+  }
 }
