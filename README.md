@@ -93,6 +93,20 @@ Robotica/
 
 # Laboratorio 2: Navegación Reactiva con Filtrado y Fusión de Sensores
 
+## Integrantes
+
+| Nombre | Rol |
+|--------|-----|
+| [Nombre 1] | [Desarrollo del controlador / Análisis / etc.] |
+| [Nombre 2] | [Desarrollo del controlador / Análisis / etc.] |
+
+## Objetivo
+
+Implementar un sistema de navegación reactiva para el robot **e-puck** en Webots,
+utilizando sensores de distancia y encoders de rueda, aplicando filtrado sobre
+las mediciones y empleando un **filtro de Kalman** escalar para estimar la
+distancia frontal a obstáculos y mejorar la toma de decisiones.
+
 ## Descripción
 
 Sistema de navegación reactiva para el robot **e-puck** en Webots, utilizando
@@ -205,6 +219,95 @@ Para cada escenario se generan 4 gráficos con prefijo `simple_` o `complex_`:
 - `{escenario}_superposicion_senales.png` — Las tres señales superpuestas
 - `{escenario}_ganancia_kalman.png` — Evolución de la ganancia K
 - `{escenario}_laterales_y_desplazamiento.png` — Sensores laterales y Δs
+
+## Análisis de las señales registradas
+
+> **Nota:** Esta sección debe completarse después de ejecutar las simulaciones.
+
+### Señal cruda de los sensores frontales
+
+[Describir el comportamiento observado: nivel de ruido, variabilidad,
+cómo responde la señal cuando el robot se acerca a un obstáculo, etc.]
+
+### Señal con filtro exponencial (α = 0.3)
+
+[Comparar con la señal cruda: reducción de ruido, suavizado,
+retardo introducido por el filtro, etc.]
+
+### Estimación con filtro de Kalman
+
+[Analizar cómo el Kalman combina la predicción (encoders) con la
+medición (sensores). Describir la evolución de la ganancia K:
+cuándo confía más en la predicción y cuándo en la medición.]
+
+### Desplazamiento estimado desde encoders
+
+[Relación s = rθ utilizada. Precisión de la estimación de avance.
+Posibles fuentes de error: deslizamiento, resolución de encoders.]
+
+## Gráficos
+
+> **Nota:** Después de ejecutar `plot_lab2.py`, reemplazar estas
+> referencias con las imágenes generadas.
+
+### Escenario Simple
+
+| Gráfico | Descripción |
+|---------|-------------|
+| ![Comparación Simple](controllers/lab2_controller/simple_comparacion_senales.png) | Señal cruda, filtrada y Kalman |
+| ![Superposición Simple](controllers/lab2_controller/simple_superposicion_senales.png) | Superposición de las tres señales |
+| ![Ganancia Kalman Simple](controllers/lab2_controller/simple_ganancia_kalman.png) | Evolución de la ganancia K |
+| ![Laterales Simple](controllers/lab2_controller/simple_laterales_y_desplazamiento.png) | Sensores laterales y Δs |
+
+### Escenario Complejo
+
+| Gráfico | Descripción |
+|---------|-------------|
+| ![Comparación Complejo](controllers/lab2_controller/complex_comparacion_senales.png) | Señal cruda, filtrada y Kalman |
+| ![Superposición Complejo](controllers/lab2_controller/complex_superposicion_senales.png) | Superposición de las tres señales |
+| ![Ganancia Kalman Complejo](controllers/lab2_controller/complex_ganancia_kalman.png) | Evolución de la ganancia K |
+| ![Laterales Complejo](controllers/lab2_controller/complex_laterales_y_desplazamiento.png) | Sensores laterales y Δs |
+
+## Resultados en los escenarios de prueba
+
+> **Nota:** Completar tras ejecutar ambas simulaciones y analizar los CSV.
+
+### Escenario Simple
+
+| Métrica | Observación |
+|---------|-------------|
+| Estabilidad del movimiento | [Describir] |
+| Giros innecesarios | [Cantidad y frecuencia] |
+| Evitación de colisiones | [¿Chocó? ¿Rozó obstáculos?] |
+| Acciones registradas | [FORWARD: N, TURN_LEFT: N, TURN_RIGHT: N] |
+
+### Escenario Complejo
+
+| Métrica | Observación |
+|---------|-------------|
+| Estabilidad del movimiento | [Describir en pasillo estrecho] |
+| Giros innecesarios | [Cantidad y frecuencia] |
+| Evitación de colisiones | [¿Logró navegar el pasillo? ¿Chocó?] |
+| Acciones registradas | [FORWARD: N, TURN_LEFT: N, TURN_RIGHT: N] |
+
+### Comparación entre escenarios
+
+[Diferencias clave en el comportamiento del robot:
+- ¿En cuál escenario hubo más giros?
+- ¿Cómo cambió la ganancia de Kalman entre escenarios?
+- ¿En cuál escenario fue más crítica la fusión sensorial?]
+
+## Conclusiones
+
+> **Nota:** Completar con el análisis final del grupo.
+
+[Responder aquí:
+1. ¿Qué ventajas ofrece el filtro de Kalman frente a usar solo
+   la señal cruda o solo el filtro exponencial?
+2. ¿Cómo afecta el entorno (simple vs complejo) al desempeño
+   de la navegación reactiva?
+3. ¿Qué limitaciones se observaron en la implementación?
+4. ¿Qué mejoras se podrían hacer al sistema?]
 
 ## Estructura del Proyecto (completa)
 
