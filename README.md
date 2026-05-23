@@ -88,4 +88,108 @@ Robotica/
 
 - **Webots** — Simulador de robots
 - **Python** — Lenguaje del controlador
-# Robotica-traajo
+
+---
+
+# Laboratorio 2: Navegación Reactiva con Filtrado y Fusión de Sensores
+
+## Descripción
+
+Sistema de navegación reactiva para el robot **e-puck** en Webots, utilizando
+sensores de distancia y encoders de rueda. Se implementa un **filtro de Kalman**
+escalar para estimar la distancia frontal al obstáculo más cercano, combinando
+la predicción por movimiento (encoders) con la corrección por medición
+(sensores frontales).
+
+## Sensores utilizados
+
+| Sensor               | Dispositivo Webots       | Función                                  |
+|----------------------|--------------------------|------------------------------------------|
+| Frontal izquierdo    | `ps7`                    | Medir obstáculos al frente               |
+| Frontal derecho      | `ps0`                    | Medir obstáculos al frente               |
+| Lateral izquierdo    | `ps5`                    | Decidir dirección de giro                |
+| Lateral derecho      | `ps2`                    | Decidir dirección de giro                |
+| Encoder izquierdo    | `left wheel sensor`      | Estimar desplazamiento lineal            |
+| Encoder derecho      | `right wheel sensor`     | Estimar desplazamiento lineal            |
+
+## Esquema de estimación (Filtro de Kalman escalar)
+
+### Variable a estimar
+`d_k`: distancia frontal al obstáculo más cercano en el instante k.
+
+### Etapa de predicción
+```
+d̂_k⁻ = d̂_{k-1} - Δs_k
+P_k⁻ = P_{k-1} + Q
+```
+Donde `Δs_k` es el avance lineal estimado desde los encoders:
+`Δs = (Δθ_L · r + Δθ_R · r) / 2`
+
+### Etapa de corrección
+```
+K_k = P_k⁻ / (P_k⁻ + R)
+d̂_k = d̂_k⁻ + K_k · (z_k - d̂_k⁻)
+P_k = (1 - K_k) · P_k⁻
+```
+Donde `z_k` es la medición del sensor frontal (`min(ps0, ps7)`).
+
+### Parámetros
+- `R = 0.001` — Varianza de la medición (ruido del sensor)
+- `Q = 0.0001` — Varianza del proceso (incertidumbre del modelo)
+
+## Lógica de navegación reactiva
+
+```
+if d̂_k > SAFE_DISTANCE (0.15 m):
+    AVANZAR recto
+else:
+    if sensor_izquierdo < sensor_derecho:
+        GIRAR a la DERECHA
+    else:
+        GIRAR a la IZQUIERDA
+```
+
+## Frecuencia de muestreo
+
+- `Ts = 32 ms` (TIME_STEP)
+- `fs = 31.25 Hz`
+- Duración de simulación: 120 s (~3750 muestras)
+
+## Cómo ejecutar
+
+1. Abrir Webots
+2. `File → Open World...` → `worlds/laboratorio2.wbt`
+3. La simulación ejecuta la navegación reactiva automáticamente
+4. Los datos se guardan en `controllers/lab2_controller/lab2_data.csv`
+
+## Análisis de resultados
+
+Después de la simulación, generar los gráficos comparativos:
+
+```bash
+cd controllers/lab2_controller
+python3 plot_lab2.py
+```
+
+Esto genera:
+- `comparacion_senales.png` — Señal cruda, filtrada y Kalman
+- `superposicion_senales.png` — Las tres señales superpuestas
+- `ganancia_kalman.png` — Evolución de la ganancia K
+- `laterales_y_desplazamiento.png` — Sensores laterales y Δs
+
+## Estructura del Proyecto (completa)
+
+```
+Robotica/
+├── README.md
+├── worlds/
+│   ├── laboratorio1.wbt
+│   └── laboratorio2.wbt
+├── controllers/
+│   ├── lab1_controller/
+│   │   └── lab1_controller.py
+│   └── lab2_controller/
+│       ├── lab2_controller.py
+│       └── plot_lab2.py
+└── video/
+```
