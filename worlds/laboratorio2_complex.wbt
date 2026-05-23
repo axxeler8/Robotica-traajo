@@ -7,7 +7,7 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 
 WorldInfo {
   info [
-    "Laboratorio 2: Escenario COMPLEJO - pasillo con dos giros"
+    "Laboratorio 2: Escenario COMPLEJO - pasillo en Z con aperturas"
     "Navegacion reactiva con filtrado y fusion de sensores"
     "ICI 4150 - Robotica y Sistemas Autonomos"
   ]
@@ -35,16 +35,15 @@ E-puck {
 }
 
 # ============================================================
-# ESCENARIO COMPLEJO: Pasillo estrecho con dos giros
-# Arena 1x1 m. Corredor de 16 cm con dos cambios de direccion
-# (tramo horizontal, giro vertical, luego horizontal).
-# E-puck: ~7 cm diametro; sensores IR rango ~5 cm.
+# ESCENARIO COMPLEJO: Pasillo en Z con aperturas
+# Arena 1x1 m. Corredor de 16 cm con dos giros y aperturas
+# explicitas para evitar bloqueos en las esquinas.
 # ============================================================
 
 # === TRAMO 1: horizontal inferior ===
 # Limites y=-0.30 (abajo) y y=-0.14 (arriba)
 Solid {
-  translation -0.25 -0.30 0.025
+  translation -0.28 -0.30 0.025
   name "wall_h1_bottom"
   children [
     Shape {
@@ -54,16 +53,16 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.40 0.02 0.05
+        size 0.34 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.40 0.02 0.05
+    size 0.34 0.02 0.05
   }
 }
 Solid {
-  translation -0.25 -0.14 0.025
+  translation -0.28 -0.14 0.025
   name "wall_h1_top"
   children [
     Shape {
@@ -73,38 +72,19 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.40 0.02 0.05
+        size 0.34 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.40 0.02 0.05
+    size 0.34 0.02 0.05
   }
 }
 
-# === TRAMO 2: vertical ===
-# Limites x=-0.05 (izq) y x=0.11 (der)
+# === TRAMO 2: vertical (con apertura inferior) ===
+# Limites x=-0.12 (izq) y x=0.04 (der)
 Solid {
-  translation -0.05 0.04 0.025
-  name "wall_v_left"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.45 0.45 0.50
-        roughness 0.6
-        metalness 0.0
-      }
-      geometry Box {
-        size 0.02 0.36 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.02 0.36 0.05
-  }
-}
-Solid {
-  translation 0.11 0.04 0.025
+  translation 0.04 0.02 0.025
   name "wall_v_right"
   children [
     Shape {
@@ -114,19 +94,38 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.02 0.36 0.05
+        size 0.02 0.32 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.02 0.36 0.05
+    size 0.02 0.32 0.05
+  }
+}
+Solid {
+  translation -0.12 0.08 0.025
+  name "wall_v_left_upper"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.45 0.45 0.50
+        roughness 0.6
+        metalness 0.0
+      }
+      geometry Box {
+        size 0.02 0.20 0.05
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.02 0.20 0.05
   }
 }
 
-# === TRAMO 3: horizontal superior ===
-# Limites y=0.22 (abajo) y y=0.38 (arriba)
+# === TRAMO 3: horizontal superior (con apertura de entrada) ===
+# Limites y=0.20 (abajo) y y=0.36 (arriba)
 Solid {
-  translation 0.15 0.22 0.025
+  translation 0.30 0.20 0.025
   name "wall_h2_bottom"
   children [
     Shape {
@@ -136,16 +135,16 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.40 0.02 0.05
+        size 0.30 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.40 0.02 0.05
+    size 0.30 0.02 0.05
   }
 }
 Solid {
-  translation 0.15 0.38 0.025
+  translation 0.28 0.36 0.025
   name "wall_h2_top"
   children [
     Shape {
@@ -155,12 +154,12 @@ Solid {
         metalness 0.0
       }
       geometry Box {
-        size 0.40 0.02 0.05
+        size 0.34 0.02 0.05
       }
     }
   ]
   boundingObject Box {
-    size 0.40 0.02 0.05
+    size 0.34 0.02 0.05
   }
 }
 
@@ -187,7 +186,7 @@ Solid {
   }
 }
 Solid {
-  translation 0.03 0.08 0.025
+  translation -0.02 0.08 0.025
   name "pillar_2"
   children [
     Shape {
