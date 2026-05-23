@@ -154,14 +154,18 @@ Donde `z_k` es la medición del sensor frontal (`min(ps0, ps7)`).
 ## Lógica de navegación reactiva
 
 ```
-if d̂_k > SAFE_DISTANCE (0.15 m):
+if z_frontal < CRITICAL_DISTANCE (0.03 m):    # Emergencia: sensor crudo
+    GIRAR (usando sensores laterales)
+elif d̂_k > SAFE_DISTANCE (0.08 m):            # Kalman: vía libre
     AVANZAR recto
-else:
-    if sensor_izquierdo < sensor_derecho:
-        GIRAR a la DERECHA
-    else:
-        GIRAR a la IZQUIERDA
+else:                                         # Kalman: obstáculo detectado
+    GIRAR (usando sensores laterales)
 ```
+
+> **Nota:** `SAFE_DISTANCE` es mayor que el rango máximo de los sensores IR
+> del e-puck (~0.05 m) porque el Kalman mantiene la estimación alta cuando no
+> hay obstáculos. El chequeo de emergencia (`CRITICAL_DISTANCE = 0.03 m`)
+> actúa como respaldo inmediato ante obstáculos muy cercanos.
 
 ## Frecuencia de muestreo
 

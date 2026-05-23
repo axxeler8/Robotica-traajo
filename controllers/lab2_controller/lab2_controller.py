@@ -34,7 +34,10 @@ AXLE_LENGTH = 0.052      # Distancia entre ruedas en m
 # ---------------------------------------------------------------------------
 FORWARD_SPEED = 3.0      # Velocidad de avance (rad/s)
 TURN_SPEED = 2.5         # Velocidad de giro (rad/s)
-SAFE_DISTANCE = 0.15     # Umbral de seguridad en m
+SAFE_DISTANCE = 0.08     # Umbral de seguridad en m (bajo porque los sensores
+                          # IR del e-puck tienen rango maximo ~5 cm)
+CRITICAL_DISTANCE = 0.03 # Distancia critica: si el sensor crudo detecta
+                          # obstaculo mas cerca que esto, se fuerza giro
 MAX_DISTANCE = 0.30      # Distancia máxima considerada (saturación)
 
 # ---------------------------------------------------------------------------
@@ -56,22 +59,20 @@ SIMULATION_DURATION = 120.0  # 2 minutos
 
 def get_sensor_distance(sensor):
     """
-    Convierte el valor crudo del sensor de distancia a metros.
-    Los sensores del e-puck devuelven valores normalizados (0-4095 aprox.)
-    donde valores más altos indican mayor proximidad.
-    Se utiliza una conversión aproximada basada en el modelo del e-puck.
+    Retorna la distancia en metros medida por el sensor.
+    Los sensores de distancia del e-puck en Webots (DistanceSensor)
+    devuelven el valor directamente en metros (0 a maxRange).
+    Cuando no hay obstáculo, el sensor retorna su valor máximo (maxRange).
+    En ese caso, retornamos MAX_DISTANCE para indicar "vía libre".
     """
-    raw = sensor.getValue()
-    # Fórmula de calibración aproximada para sensores de proximidad e-puck
-    # Evitar división por cero: si raw es muy pequeño, retornar MAX_DISTANCE
-    if raw < 10:
+    value = sensor.getValue()
+    max_val = sensor.getMaxValue()
+
+    # Si la lectura está en el máximo (o muy cerca), no hay obstáculo
+    if value >= max_val * 0.95:
         return MAX_DISTANCE
-    # Conversión empírica: distancia ~ 1 / (raw * factor)
-    # Los sensores del e-puck tienen un rango útil de ~0.005 m a ~0.05 m
-    # Usamos una fórmula que mapea correctamente
-    distance = 0.425 / (raw + 0.02) - 0.005
-    distance = max(0.002, min(MAX_DISTANCE, distance))
-    return distance
+
+    return max(0.002, min(MAX_DISTANCE, value))
 
 
 def main():
@@ -103,6 +104,12 @@ def main():
     frontal_right_sensor.enable(TIME_STEP)
     left_sensor.enable(TIME_STEP)
     right_sensor.enable(TIME_STEP)
+
+    # Mostrar rangos máximos de los sensores (para depuración)
+    print(f"Sensor frontal izq (ps7): maxRange = {frontal_left_sensor.getMaxValue():.4f} m")
+    print(f"Sensor frontal der (ps0): maxRange = {frontal_right_sensor.getMaxValue():.4f} m")
+    print(f"Sensor lateral izq (ps5): maxRange = {left_sensor.getMaxValue():.4f} m")
+    print(f"Sensor lateral der (ps2): maxRange = {right_sensor.getMaxValue():.4f} m")
 
     # -----------------------------------------------------------------------
     # Configuración de encoders (sensores de posición de las ruedas)
@@ -216,13 +223,24 @@ def main():
         # -------------------------------------------------------------------
         # 5. Decisión de navegación reactiva
         # -------------------------------------------------------------------
-        if d_est > SAFE_DISTANCE:
+        # Chequeo de emergencia: si el sensor crudo detecta un obstáculo
+        # muy cercano, se fuerza el giro inmediatamente sin esperar al Kalman
+        if z_frontal < CRITICAL_DISTANCE:
+            if raw_left < raw_right:
+                left_motor.setVelocity(TURN_SPEED)
+                right_motor.setVelocity(-TURN_SPEED)
+                action = "TURN_RIGHT"
+            else:
+                left_motor.setVelocity(-TURN_SPEED)
+                right_motor.setVelocity(TURN_SPEED)
+                action = "TURN_LEFT"
+        elif d_est > SAFE_DISTANCE:
             # Avanzar recto
             left_motor.setVelocity(FORWARD_SPEED)
             right_motor.setVelocity(FORWARD_SPEED)
             action = "FORWARD"
         else:
-            # Obstáculo detectado: decidir hacia dónde girar
+            # Obstáculo detectado por Kalman: decidir hacia dónde girar
             if raw_left < raw_right:
                 # Obstáculo más cercano a la izquierda → girar a la derecha
                 left_motor.setVelocity(TURN_SPEED)
