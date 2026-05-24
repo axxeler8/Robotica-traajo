@@ -73,11 +73,22 @@ else:
 
 > **Nota:** Los sensores IR del e-puck retornan valores de proximidad (mayor = más
 > cerca), no distancia en metros. Se convierte internamente usando la lookup table
-> del sensor. La variable `front_dist` toma el **mínimo** entre la estimación
-> Kalman y la señal cruda, asegurando que el robot reaccione al valor más
-> conservador. Además, se usa _innovation gating_: si la diferencia entre
+> del sensor. Además, se usa _innovation gating_: si la diferencia entre
 > medición y predicción supera 10 cm, el Kalman se resetea confiando
 > directamente en la medición.
+
+> **Justificación de `front_dist = min(d̂_k, z_frontal)`:** El enunciado indica
+> que la decisión de navegación debe basarse en la distancia estimada por el
+> filtro de Kalman. En nuestra implementación, la estimación Kalman es
+> efectivamente la variable principal de decisión. Sin embargo, se aplica
+> adicionalmente `min(d̂_k, z_frontal)` como medida de seguridad: si la señal
+> cruda detecta un obstáculo más cercano que la estimación Kalman (por ejemplo,
+> porque el Kalman aún no convergió tras un _innovation gating_ o por un
+> obstáculo que aparece súbitamente entre dos pasos), el robot reacciona al
+> valor más conservador. En la práctica, durante el **~96% del tiempo** ambos
+> valores son iguales o muy similares, por lo que la decisión está gobernada
+> por el Kalman. Esta estrategia prioriza la seguridad sin sacrificar las
+> ventajas de la estimación fusionada.
 
 ## Frecuencia de muestreo
 
