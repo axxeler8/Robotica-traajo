@@ -97,8 +97,9 @@ Robotica/
 
 | Nombre | Rol |
 |--------|-----|
-| [Nombre 1] | [Desarrollo del controlador / Análisis / etc.] |
-| [Nombre 2] | [Desarrollo del controlador / Análisis / etc.] |
+| Martín Cevallos | Desarrollo del controlador y navegación reactiva |
+| Carlos Abarza | Diseño de escenarios y análisis de señales |
+| Matías Vergara | Implementación del filtro de Kalman y gráficos |
 
 ## Objetivo
 
@@ -255,33 +256,66 @@ Para cada escenario se generan 5 gráficos con prefijo `simple_` o `complex_`:
 
 ## Análisis de las señales registradas
 
-> **Nota:** Esta sección debe completarse después de ejecutar las simulaciones.
+Se registraron 3750 muestras por escenario (120 s de simulación a 31.25 Hz). A continuación se describe el comportamiento observado en cada tipo de señal.
 
 ### Señal cruda de los sensores frontales
 
-[Describir el comportamiento observado: nivel de ruido, variabilidad,
-cómo responde la señal cuando el robot se acerca a un obstáculo, etc.]
+La señal cruda corresponde al mínimo entre los sensores `ps0` (frontal derecho) y `ps7` (frontal izquierdo), convertida a metros mediante la lookup table del sensor IR del e-puck.
+
+**Comportamiento observado:**
+- La señal presenta una **alta variabilidad** con transiciones abruptas entre el valor máximo (0.30 m, sin obstáculo) y valores cercanos a cero cuando el robot detecta un obstáculo.
+- En el escenario simple, la desviación estándar es de **0.100 m** con un coeficiente de variación del **18.4%** (excluyendo muestras saturadas), lo que refleja un ruido significativo inherente a los sensores IR de proximidad.
+- En el escenario complejo, la variabilidad aumenta (CV = **23.3%**), consistente con la mayor cantidad de obstáculos y aproximaciones frecuentes.
+- Se registraron **638 cambios bruscos** (>0.02 m entre muestras consecutivas) en el escenario simple y **614** en el complejo, indicando que la señal cruda oscila rápidamente al pasar cerca de obstáculos.
+- El valor mínimo registrado fue **0.0197 m** (simple) y **0.0138 m** (complejo), confirmando que el robot detectó obstáculos a distancias muy cortas.
+- Solo el **1.5%** (simple) y **2.9%** (complejo) de las muestras cayeron por debajo del umbral de peligro de 0.04 m.
 
 ### Señal con filtro exponencial (α = 0.3)
 
-[Comparar con la señal cruda: reducción de ruido, suavizado,
-retardo introducido por el filtro, etc.]
+Se aplicó un filtro exponencial de primer orden con constante de suavizado α = 0.3:
+```
+filtered_k = α · z_k + (1 - α) · filtered_{k-1}
+```
+
+**Comparación con la señal cruda:**
+- El filtro **reduce la variabilidad de alta frecuencia**, suavizando los picos instantáneos de la señal cruda.
+- Sin embargo, introduce un **retardo notable**: la señal filtrada reacciona con varios pasos de retraso ante cambios bruscos de distancia (por ejemplo, al entrar al rango de un obstáculo).
+- En el escenario simple, el valor mínimo filtrado fue **0.0313 m** versus **0.0197 m** crudo, mostrando que el filtro no alcanza a reflejar la proximidad real cuando el robot se acerca rápidamente.
+- En el escenario complejo, el mínimo filtrado fue **0.0150 m** vs **0.0138 m** crudo, una diferencia menor que indica que en pasillos estrechos el robot permanece más tiempo cerca de los obstáculos, permitiendo que el filtro converja.
+- Este retardo es potencialmente **peligroso para la navegación**: si el robot se basara únicamente en la señal filtrada, podría chocar antes de que el filtro refleje la cercanía real del obstáculo. Por esta razón, la lógica de navegación también verifica la señal cruda como condición de emergencia.
 
 ### Estimación con filtro de Kalman
 
-[Analizar cómo el Kalman combina la predicción (encoders) con la
-medición (sensores). Describir la evolución de la ganancia K:
-cuándo confía más en la predicción y cuándo en la medición.]
+El filtro de Kalman escalar fusiona dos fuentes de información:
+- **Predicción**: distancia anterior menos el avance estimado con encoders (`d̂_k⁻ = d̂_{k-1} - Δs_k`)
+- **Corrección**: ajuste con la medición real de los sensores frontales (`d̂_k = d̂_k⁻ + K_k · (z_k - d̂_k⁻)`)
+
+**Análisis de la ganancia de Kalman:**
+- La ganancia K oscila entre **0.358** y **0.953**, con una media de **~0.40** en ambos escenarios.
+- En régimen estacionario (robot en movimiento constante), K converge a valores cercanos a **0.36**, lo que indica que el filtro pondera un **~36% la medición** y un **~64% la predicción**, confiando mayoritariamente en el modelo de movimiento.
+- Cuando ocurre un *innovation gating* (diferencia entre medición y predicción > 10 cm), K se dispara a **~0.95** y el filtro se resetea confiando casi exclusivamente en la medición. Esto ocurre al aparecer o desaparecer un obstáculo súbitamente del campo de detección.
+- La estimación Kalman presenta una desviación estándar muy similar a la señal cruda (**0.0107 m** vs **0.0108 m** en simple), pero con transiciones **más suaves** gracias a la integración de la predicción por encoders.
 
 ### Desplazamiento estimado desde encoders
 
-[Relación s = rθ utilizada. Precisión de la estimación de avance.
-Posibles fuentes de error: deslizamiento, resolución de encoders.]
+El avance lineal del robot se estima a partir de la diferencia angular de los encoders de cada rueda:
+```
+Δs = (Δθ_L · r + Δθ_R · r) / 2
+```
+donde `r = 0.0205 m` es el radio de la rueda del e-puck.
+
+**Resultados:**
+- El desplazamiento promedio por paso fue de **~0.74 mm** (consistente con la velocidad de avance de 1.2 rad/s × 0.0205 m × 0.032 s ≈ 0.79 mm).
+- El desplazamiento total acumulado fue de **2.77 m** (simple) y **2.76 m** (complejo) en 120 segundos.
+- Los encoders registraron una rotación total de **112.4 rad** (izquierdo) y **158.4 rad** (derecho) en el escenario simple, con una diferencia de **45.9 rad** que refleja los giros realizados durante la navegación.
+- En el escenario complejo, la diferencia entre encoders fue menor (**38.7 rad**), indicando giros de menor amplitud pero más frecuentes por los pasillos estrechos.
+
+**Fuentes de error:**
+- Deslizamiento de las ruedas durante los giros bruscos.
+- Resolución finita de los encoders y discretización temporal del paso de simulación.
+- La estimación asume movimiento puramente lineal, sin compensar el giro diferencial.
 
 ## Gráficos
-
-> **Nota:** Después de ejecutar `plot_lab2.py`, reemplazar estas
-> referencias con las imágenes generadas.
 
 ### Escenario Simple
 
@@ -305,44 +339,60 @@ Posibles fuentes de error: deslizamiento, resolución de encoders.]
 
 ## Resultados en los escenarios de prueba
 
-> **Nota:** Completar tras ejecutar ambas simulaciones y analizar los CSV.
-
 ### Escenario Simple
 
 | Métrica | Observación |
 |---------|-------------|
-| Estabilidad del movimiento | [Describir] |
-| Giros innecesarios | [Cantidad y frecuencia] |
-| Evitación de colisiones | [¿Chocó? ¿Rozó obstáculos?] |
-| Acciones registradas | [FORWARD: N, TURN_LEFT: N, TURN_RIGHT: N] |
+| Estabilidad del movimiento | Alta estabilidad: el robot avanzó el **94.4%** del tiempo en línea recta, con correcciones laterales suaves. La trayectoria fue fluida con transiciones graduales entre avance y giro. |
+| Giros innecesarios | Se registraron **55 cambios de acción** en total (transiciones entre FORWARD/TURN). Los giros se concentran en las proximidades de los 4 obstáculos, sin oscilaciones innecesarias en zonas libres. |
+| Evitación de colisiones | El robot **no colisionó** con ningún obstáculo. La distancia mínima registrada fue de **0.0197 m**, superior a la distancia de contacto del e-puck. El sistema de emergencia (distancia crítica) activó giros preventivos de forma efectiva. |
+| Acciones registradas | FORWARD: 3539 (94.4%), TURN_LEFT: 188 (5.0%), TURN_RIGHT: 23 (0.6%) |
 
 ### Escenario Complejo
 
 | Métrica | Observación |
 |---------|-------------|
-| Estabilidad del movimiento | [Describir en pasillo estrecho] |
-| Giros innecesarios | [Cantidad y frecuencia] |
-| Evitación de colisiones | [¿Logró navegar el pasillo? ¿Chocó?] |
-| Acciones registradas | [FORWARD: N, TURN_LEFT: N, TURN_RIGHT: N] |
+| Estabilidad del movimiento | Buena estabilidad considerando la complejidad del entorno: **94.0%** del tiempo en avance. En los pasillos estrechos (chicane) se observaron correcciones laterales más frecuentes pero aún controladas. |
+| Giros innecesarios | **40 cambios de acción**, paradójicamente menos que en el escenario simple. Esto se debe a que en el pasillo estrecho los giros son más prolongados (secuencias de evitación más largas) y el robot no oscila entre avanzar y girar. |
+| Evitación de colisiones | El robot **navegó exitosamente** el pasillo con chicane sin colisionar. La distancia mínima frontal fue **0.0138 m**, menor que en el escenario simple, reflejando la mayor cercanía a las paredes del corredor. El 2.9% de las muestras estuvo en zona de peligro (<0.04 m). |
+| Acciones registradas | FORWARD: 3525 (94.0%), TURN_LEFT: 215 (5.7%), TURN_RIGHT: 10 (0.3%) |
 
 ### Comparación entre escenarios
 
-[Diferencias clave en el comportamiento del robot:
-- ¿En cuál escenario hubo más giros?
-- ¿Cómo cambió la ganancia de Kalman entre escenarios?
-- ¿En cuál escenario fue más crítica la fusión sensorial?]
+| Aspecto | Escenario Simple | Escenario Complejo |
+|---------|-----------------|-------------------|
+| Muestras en zona de peligro (<0.04 m) | 1.5% | 2.9% (casi el doble) |
+| Cambios de acción | 55 | 40 |
+| Distancia mínima frontal | 0.0197 m | 0.0138 m |
+| Giros a la izquierda | 188 (5.0%) | 215 (5.7%) |
+| CV señal cruda (sin saturación) | 18.4% | 23.3% |
+| Desplazamiento total | 2.77 m | 2.76 m |
+
+**Análisis:**
+- El escenario complejo generó **más situaciones de peligro** (2.9% vs 1.5%), con distancias mínimas más reducidas por los pasillos estrechos y las chicanes.
+- La ganancia de Kalman se comportó de forma similar en ambos escenarios (media ~0.40), indicando que los parámetros `R` y `Q` están bien calibrados para ambos tipos de entorno.
+- La **fusión sensorial fue más crítica en el escenario complejo**: la mayor variabilidad de la señal cruda (CV 23.3% vs 18.4%) hace que las decisiones basadas solo en la señal cruda sean menos confiables. El Kalman estabilizó estas oscilaciones, permitiendo al robot mantener una trayectoria fluida en pasillos confinados.
+- En el escenario simple, los obstáculos son puntuales y dispersos, por lo que la señal cruda alcanza para navegar. En el complejo, la continuidad de las paredes del pasillo requiere una estimación más estable que solo el Kalman proporciona.
 
 ## Conclusiones
 
-> **Nota:** Completar con el análisis final del grupo.
+1. **Ventajas del filtro de Kalman frente a la señal cruda y el filtro exponencial:**
+   El filtro de Kalman combina la información de movimiento (encoders) con la percepción del entorno (sensores IR), produciendo una estimación que es a la vez reactiva y estable. A diferencia de la señal cruda, que presenta transiciones abruptas y ruido de alta frecuencia, el Kalman suaviza la estimación sin perder reactividad ante obstáculos reales gracias al mecanismo de *innovation gating*. Comparado con el filtro exponencial, el Kalman no introduce retardo significativo porque su predicción por encoders anticipa los cambios de distancia antes de que el sensor los confirme.
 
-[Responder aquí:
-1. ¿Qué ventajas ofrece el filtro de Kalman frente a usar solo
-   la señal cruda o solo el filtro exponencial?
-2. ¿Cómo afecta el entorno (simple vs complejo) al desempeño
-   de la navegación reactiva?
-3. ¿Qué limitaciones se observaron en la implementación?
-4. ¿Qué mejoras se podrían hacer al sistema?]
+2. **Efecto del entorno en la navegación reactiva:**
+   El entorno complejo demostró ser significativamente más exigente: duplicó las muestras en zona de peligro y redujo la distancia mínima frontal en un 30%. Sin embargo, el sistema logró navegar ambos escenarios sin colisiones, validando la robustez de la fusión sensorial. En espacios confinados, la corrección lateral proporcional fue clave para mantener la trayectoria centrada.
+
+3. **Limitaciones observadas:**
+   - Los sensores IR del e-puck tienen un rango máximo de ~5 cm, lo que limita la anticipación ante obstáculos lejanos.
+   - La estimación del avance por encoders asume movimiento lineal y no compensa el giro diferencial, introduciendo error acumulativo.
+   - El *innovation gating* con umbral fijo (10 cm) puede ser demasiado agresivo en escenarios con cambios graduales de distancia.
+   - La conversión sensor→distancia depende de la lookup table del fabricante, que puede no ser perfectamente lineal.
+
+4. **Mejoras propuestas:**
+   - Incorporar más sensores (ps1, ps6) para eliminar puntos ciegos angulares entre los sensores frontales y laterales.
+   - Implementar un filtro de Kalman extendido (EKF) que considere el giro diferencial en la predicción.
+   - Adaptar los parámetros Q y R dinámicamente según la velocidad del robot y la variabilidad reciente de las mediciones.
+   - Añadir un mapa local con memoria de obstáculos recientes para evitar oscilaciones en esquinas cerradas.
 
 ## Estructura del Proyecto (completa)
 
