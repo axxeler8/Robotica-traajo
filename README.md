@@ -108,14 +108,6 @@ utilizando sensores de distancia y encoders de rueda, aplicando filtrado sobre
 las mediciones y empleando un **filtro de Kalman** escalar para estimar la
 distancia frontal a obstáculos y mejorar la toma de decisiones.
 
-## Descripción
-
-Sistema de navegación reactiva para el robot **e-puck** en Webots, utilizando
-sensores de distancia y encoders de rueda. Se implementa un **filtro de Kalman**
-escalar para estimar la distancia frontal al obstáculo más cercano, combinando
-la predicción por movimiento (encoders) con la corrección por medición
-(sensores frontales).
-
 ## Sensores utilizados
 
 | Sensor            | Dispositivo Webots   | Función                       |
@@ -228,14 +220,6 @@ evitando bloqueos. Este diseño permite analizar:
 - **Estabilidad** en espacios cada vez más confinados
 - **Efectividad de la fusión sensorial** bajo estrés creciente
 
-### Análisis comparativo entre escenarios
-
-Para cada escenario se debe evaluar:
-
-- **Estabilidad del movimiento**: qué tan suave es la trayectoria
-- **Cantidad de giros innecesarios**: frecuencia de cambios de dirección
-- **Capacidad para evitar colisiones**: si el robot choca o roza obstáculos
-- **Diferencias entre mediciones**: cruda vs filtrada vs Kalman
 
 ## Cómo ejecutar
 
@@ -244,29 +228,14 @@ Para cada escenario se debe evaluar:
 3. **Escenario complejo**: `File → Open World...` → `worlds/laboratorio2_complex.wbt`
 4. La simulación ejecuta la navegación reactiva automáticamente (120 s)
 5. Los datos se guardan como `lab2_data_simple.csv` o `lab2_data_complex.csv`
-
-## Análisis de resultados
-
-Después de ejecutar AMBAS simulaciones, generar los gráficos:
+6. Para generar los gráficos de análisis:
 
 ```bash
 cd controllers/lab2_controller
-
-# Analizar ambos escenarios
-python3 plot_lab2.py
-
-# O uno específico
-python3 plot_lab2.py simple
-python3 plot_lab2.py complex
+python3 plot_lab2.py            # Ambos escenarios
+python3 plot_lab2.py simple     # Solo escenario simple
+python3 plot_lab2.py complex    # Solo escenario complejo
 ```
-
-Para cada escenario se generan 5 gráficos con prefijo `simple_` o `complex_`:
-
-- `{escenario}_comparacion_senales.png` — Señal cruda, filtrada y Kalman
-- `{escenario}_superposicion_senales.png` — Las tres señales superpuestas
-- `{escenario}_ganancia_kalman.png` — Evolución de la ganancia K
-- `{escenario}_laterales_y_desplazamiento.png` — Sensores laterales y Δs
-- `{escenario}_encoders_y_sensores_crudos.png` — Encoders crudos y sensores IR crudos
 
 ## Análisis de las señales registradas
 
