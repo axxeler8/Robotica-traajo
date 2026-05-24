@@ -60,22 +60,24 @@ Donde `z_k` es la medición del sensor frontal (`min(ps0, ps7)`).
 ## Lógica de navegación reactiva
 
 ```
-if z_frontal < CRITICAL_DISTANCE (0.008 m):   # Emergencia: sensor crudo
-    GIRAR (usando sensores laterales)
-elif d̂_k > SAFE_DISTANCE (0.04 m)
-     AND filtered > SAFE_DISTANCE:             # Kalman + filtro: vía libre
-    AVANZAR recto
-else:                                         # Obstáculo detectado
-    GIRAR (usando sensores laterales)
+front_dist = min(d̂_k, z_frontal)
+side_danger = min(sensor_izq, sensor_der)
+
+if front_dist < CRITICAL_DISTANCE (0.02 m) OR side_danger < SIDE_CRITICAL (0.015 m):
+    GIRAR (secuencia de evitación larga)
+elif front_dist < SAFE_DISTANCE (0.04 m):
+    GIRAR (secuencia de evitación normal)
+else:
+    AVANZAR con corrección lateral proporcional
 ```
 
 > **Nota:** Los sensores IR del e-puck retornan valores de proximidad (mayor = más
 > cerca), no distancia en metros. Se convierte internamente usando la lookup table
-> del sensor: `distancia = 0.05 × (1 - valor/1024)`. El robot avanza **solo** si
-> tanto la estimación Kalman como la señal filtrada indican vía libre, evitando
-> colisiones por retardo del filtro. Además, se usa _innovation gating_: si la
-> diferencia entre medición y predicción supera 10 cm, el Kalman se resetea
-> confiando directamente en la medición.
+> del sensor. La variable `front_dist` toma el **mínimo** entre la estimación
+> Kalman y la señal cruda, asegurando que el robot reaccione al valor más
+> conservador. Además, se usa _innovation gating_: si la diferencia entre
+> medición y predicción supera 10 cm, el Kalman se resetea confiando
+> directamente en la medición.
 
 ## Frecuencia de muestreo
 
