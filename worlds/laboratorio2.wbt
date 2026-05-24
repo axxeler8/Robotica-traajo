@@ -33,7 +33,6 @@ E-puck {
   controller "lab2_controller"
   customData "simple"
 }
-# Obstáculo 1: caja al frente-derecha
 Solid {
   translation 0.15 -0.05 0.025
   children [
@@ -53,7 +52,6 @@ Solid {
     size 0.04 0.04 0.05
   }
 }
-# Obstáculo 2: caja al frente-izquierda
 Solid {
   translation -0.12 0.10 0.025
   children [
@@ -73,7 +71,6 @@ Solid {
     size 0.04 0.04 0.05
   }
 }
-# Obstáculo 3: caja en la esquina superior
 Solid {
   translation 0.10 0.15 0.025
   children [
@@ -93,7 +90,6 @@ Solid {
     size 0.05 0.03 0.05
   }
 }
-# Obstáculo 4: cilindro central-izquierda
 Solid {
   translation -0.08 -0.12 0.025
   children [
