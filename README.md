@@ -87,45 +87,39 @@ else:                                         # Obstáculo detectado
 
 ### Escenario Simple (`worlds/laboratorio2.wbt`)
 
-**Slalom de Precisión** — Arena 1×1 m con **4 pilares en formación rombo**
-(rojo, azul, verde, violeta). El robot parte desde x=-0.42 mirando hacia +X
-y debe esquivar cada pilar con correcciones suaves de trayectoria.
+Arena de **0.65×0.65 m** con **4 obstáculos dispersos**. El robot parte desde el centro de la arena mirando hacia +X.
 
-Esquema del recorrido esperado:
+| Obstáculo | Tipo | Color | Posición (x, y) | Tamaño |
+|-----------|------|-------|------------------|--------|
+| obstacle_1 | Caja | Rojo | (0.15, -0.05) | 4×4 cm |
+| obstacle_2 | Caja | Verde | (-0.12, 0.10) | 4×4 cm |
+| obstacle_3 | Caja | Azul | (0.10, 0.15) | 5×3 cm |
+| obstacle_4 | Cilindro | Amarillo | (-0.08, -0.12) | r=2 cm |
 
-```
-Salida  ●        ● Pilar 3 (verde)
-         \      /
-          \    /
-   Pilar 1 ●  ● Pilar 4 (violeta) → Meta
-          /    \
-         /      \
-        ●        ● Pilar 2 (azul)
-    Robot
-```
-
-Este diseño evalúa precisión de evitación en espacio abierto con
-obstáculos puntuales. Ideal para comparar señal cruda vs Kalman.
+Este diseño evalúa la evitación de obstáculos puntuales en espacio abierto, ideal para comparar señal cruda vs Kalman con aproximaciones individuales a cada obstáculo.
 
 ### Escenario Complejo (`worlds/laboratorio2_complex.wbt`)
 
-**Laberinto Progresivo** — Arena 1×1 m con **3 zonas de dificultad creciente**
-y obstáculos **desplazados del centro** para guiar al robot, no bloquearlo:
+Arena de **0.8×0.8 m** con un **pasillo central con chicane** y **7 obstáculos dispersos**. El robot parte desde (0, -0.30) mirando hacia +Y.
 
-| Zona   | x             | Ancho | Obstáculos                                      | Guía                        |
-| ------ | ------------- | ----- | ----------------------------------------------- | --------------------------- |
-| Zona 1 | -0.44 a -0.10 | 24 cm | Pilar amarillo (r=2 cm, desplazado a y=+0.04)   | Paso libre por la izquierda |
-| Zona 2 | -0.10 a 0.22  | 18 cm | Caja azul (izq) + caja roja (der)               | Zigzag alternado            |
-| Zona 3 | 0.22 a 0.44   | 14 cm | Pared de cierre violeta + pilar verde de salida | Giro forzado al final       |
+**Pasillo central:**
+- Dos paredes paralelas en x=±0.06 (ancho del corredor: **12 cm**), de 20 cm de largo
+- Chicane 1 (naranja): pared lateral en (-0.06, 0.15), fuerza giro a la derecha
+- Chicane 2 (azul): pared lateral en (0.06, 0.25), fuerza giro a la izquierda
 
-La pared superior es fija a y=+0.12 en todo el recorrido. La pared inferior
-se eleva gradualmente (y=-0.12 → -0.09 → -0.07) estrechando el corredor.
-El pilar de la Zona 1 está descentrado para dar un camino claro de 8 cm,
-evitando bloqueos. Este diseño permite analizar:
+**Obstáculos en zona abierta:**
 
-- **Adaptación del Kalman** al estrechamiento progresivo
-- **Estabilidad** en espacios cada vez más confinados
-- **Efectividad de la fusión sensorial** bajo estrés creciente
+| Obstáculo | Tipo | Color | Posición (x, y) | Tamaño |
+|-----------|------|-------|------------------|--------|
+| obstacle_big_1 | Caja | Rojo | (-0.25, 0.25) | 6×6 cm |
+| obstacle_big_2 | Caja | Verde | (0.25, 0.20) | 5×8 cm |
+| obstacle_cyl_1 | Cilindro | Amarillo | (0.15, -0.10) | r=3 cm |
+| obstacle_wall_1 | Caja | Violeta | (-0.25, -0.20) | 4×10 cm |
+| obstacle_wall_2 | Caja | Gris | (0.20, 0.05) | 12×1 cm |
+| obstacle_cyl_2 | Cilindro | Cian | (-0.18, -0.05) | r=2 cm |
+| obstacle_exit | Caja | Rosa | (0.0, 0.35) | 8×3 cm |
+
+Este diseño combina navegación en espacio confinado (pasillo con chicane) y evitación en zona abierta, permitiendo analizar la adaptación del Kalman a distintos niveles de exigencia.
 
 
 ## Cómo ejecutar
