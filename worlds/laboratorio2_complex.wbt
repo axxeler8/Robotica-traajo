@@ -7,11 +7,10 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/project
 
 WorldInfo {
   info [
-    "Laboratorio 2: Escenario COMPLEJO - laberinto progresivo"
-    "Navegacion reactiva con filtrado y fusion de sensores"
-    "ICI 4150 - Robotica y Sistemas Autonomos"
+    "Laboratorio 2: Navegación Reactiva - Escenario Complejo"
+    "ICI 4150 - Robótica y Sistemas Autónomos"
   ]
-  title "Lab2 - Escenario Complejo: Laberinto Progresivo"
+  title "Lab2 - Escenario Complejo"
   basicTimeStep 32
 }
 Viewpoint {
@@ -23,76 +22,214 @@ TexturedBackground {
 TexturedBackgroundLight {
 }
 RectangleArena {
-  floorSize 1 1
+  floorSize 0.8 0.8
   wallHeight 0.05
+  wallThickness 0.01
 }
 E-puck {
-  translation -0.44 0 0
-  rotation 0 0 1 0
+  translation 0 -0.30 0
+  rotation 0 0 1 1.5708
   name "e-puck"
   controller "lab2_controller"
   customData "complex"
 }
 
-# ============================================================
-# ESCENARIO COMPLEJO: Laberinto Progresivo (3 zonas)
-# Arena 1x1 m. Robot en (-0.44, 0) mirando +X.
-# Las paredes se estrechan progresivamente y los obstaculos
-# estan desplazados del centro para guiar al robot, no bloquearlo.
-# ============================================================
-
-# === PARED EXTERIOR FIJA: y = +0.12 (todo el recorrido) ===
+# ===== PASILLO CENTRAL (chicane) =====
+# Pared izquierda del pasillo - tramo 1
 Solid {
-  translation 0.0 0.12 0.025
-  name "wall_top"
+  translation -0.06 0.0 0.025
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.40 0.40 0.45
-        roughness 0.5
-        metalness 0.1
+        baseColor 0.6 0.6 0.6
+        roughness 0.8
+        metalness 0
       }
       geometry Box {
-        size 0.90 0.02 0.05
+        size 0.01 0.20 0.05
       }
     }
   ]
+  name "corridor_L1"
   boundingObject Box {
-    size 0.90 0.02 0.05
+    size 0.01 0.20 0.05
   }
 }
-
-# === ZONA 1 (x=-0.44 a -0.10): amplio, 24 cm, pilar guia ===
-# Pared inferior zona 1 (y=-0.12)
+# Pared derecha del pasillo - tramo 1
 Solid {
-  translation -0.27 -0.12 0.025
-  name "z1_wall_bottom"
+  translation 0.06 0.0 0.025
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.40 0.40 0.45
-        roughness 0.5
-        metalness 0.1
+        baseColor 0.6 0.6 0.6
+        roughness 0.8
+        metalness 0
       }
       geometry Box {
-        size 0.34 0.02 0.05
+        size 0.01 0.20 0.05
       }
     }
   ]
+  name "corridor_R1"
   boundingObject Box {
-    size 0.34 0.02 0.05
+    size 0.01 0.20 0.05
   }
 }
-# Pilar desplazado a la derecha (deja paso libre a la izquierda)
+
+# ===== CHICANE: paredes alternadas para forzar S-turns =====
+# Chicane pared desde la izquierda (obliga a girar a la derecha)
 Solid {
-  translation -0.28 0.04 0.025
-  name "z1_pilar"
+  translation -0.06 0.15 0.025
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.90 0.60 0.10
-        roughness 0.25
-        metalness 0.10
+        baseColor 0.9 0.4 0.1
+        roughness 0.5
+        metalness 0
+      }
+      geometry Box {
+        size 0.07 0.01 0.05
+      }
+    }
+  ]
+  name "chicane_1"
+  boundingObject Box {
+    size 0.07 0.01 0.05
+  }
+}
+# Chicane pared desde la derecha (obliga a girar a la izquierda)
+Solid {
+  translation 0.06 0.25 0.025
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.1 0.4 0.9
+        roughness 0.5
+        metalness 0
+      }
+      geometry Box {
+        size 0.07 0.01 0.05
+      }
+    }
+  ]
+  name "chicane_2"
+  boundingObject Box {
+    size 0.07 0.01 0.05
+  }
+}
+
+# ===== OBSTÁCULOS DISPERSOS EN ZONA ABIERTA =====
+# Obstáculo grande esquina superior izquierda
+Solid {
+  translation -0.25 0.25 0.025
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.2 0.2
+        roughness 0.5
+        metalness 0
+      }
+      geometry Box {
+        size 0.06 0.06 0.05
+      }
+    }
+  ]
+  name "obstacle_big_1"
+  boundingObject Box {
+    size 0.06 0.06 0.05
+  }
+}
+# Obstáculo esquina superior derecha
+Solid {
+  translation 0.25 0.20 0.025
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.2 0.7 0.2
+        roughness 0.5
+        metalness 0
+      }
+      geometry Box {
+        size 0.05 0.08 0.05
+      }
+    }
+  ]
+  name "obstacle_big_2"
+  boundingObject Box {
+    size 0.05 0.08 0.05
+  }
+}
+# Cilindro central
+Solid {
+  translation 0.15 -0.10 0.025
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.8 0.1
+        roughness 0.5
+        metalness 0
+      }
+      geometry Cylinder {
+        height 0.05
+        radius 0.03
+      }
+    }
+  ]
+  name "obstacle_cyl_1"
+  boundingObject Cylinder {
+    height 0.05
+    radius 0.03
+  }
+}
+# Obstáculo esquina inferior izquierda
+Solid {
+  translation -0.25 -0.20 0.025
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.5 0.1 0.7
+        roughness 0.5
+        metalness 0
+      }
+      geometry Box {
+        size 0.04 0.10 0.05
+      }
+    }
+  ]
+  name "obstacle_wall_1"
+  boundingObject Box {
+    size 0.04 0.10 0.05
+  }
+}
+# Obstáculo tipo muro cerca del pasillo
+Solid {
+  translation 0.20 0.05 0.025
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.3 0.3 0.3
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.12 0.01 0.05
+      }
+    }
+  ]
+  name "obstacle_wall_2"
+  boundingObject Box {
+    size 0.12 0.01 0.05
+  }
+}
+# Pequeño obstáculo en zona libre
+Solid {
+  translation -0.18 -0.05 0.025
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.1 0.8 0.8
+        roughness 0.5
+        metalness 0
       }
       geometry Cylinder {
         height 0.05
@@ -100,134 +237,29 @@ Solid {
       }
     }
   ]
+  name "obstacle_cyl_2"
   boundingObject Cylinder {
     height 0.05
     radius 0.02
   }
 }
-
-# === ZONA 2 (x=-0.10 a 0.22): medio, 18 cm, dos obstaculos ===
-# Pared inferior sube a y=-0.09
+# Obstáculo en la zona de salida del pasillo
 Solid {
-  translation 0.06 -0.09 0.025
-  name "z2_wall_bottom"
+  translation 0.0 0.35 0.025
   children [
     Shape {
       appearance PBRAppearance {
-        baseColor 0.40 0.40 0.45
+        baseColor 0.7 0.3 0.5
         roughness 0.5
-        metalness 0.1
+        metalness 0
       }
       geometry Box {
-        size 0.32 0.02 0.05
+        size 0.08 0.03 0.05
       }
     }
   ]
+  name "obstacle_exit"
   boundingObject Box {
-    size 0.32 0.02 0.05
-  }
-}
-# Obstaculo izquierdo (deja paso a la derecha)
-Solid {
-  translation -0.04 -0.03 0.025
-  name "z2_obs_izq"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.20 0.50 0.85
-        roughness 0.30
-        metalness 0.05
-      }
-      geometry Box {
-        size 0.03 0.04 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.03 0.04 0.05
-  }
-}
-# Obstaculo derecho (fuerza correccion fina)
-Solid {
-  translation 0.12 0.04 0.025
-  name "z2_obs_der"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.85 0.25 0.20
-        roughness 0.30
-        metalness 0.05
-      }
-      geometry Box {
-        size 0.03 0.04 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.03 0.04 0.05
-  }
-}
-
-# === ZONA 3 (x=0.22 a 0.44): estrecho, 14 cm, cierre final ===
-# Pared inferior sube a y=-0.07
-Solid {
-  translation 0.33 -0.07 0.025
-  name "z3_wall_bottom"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.35 0.35 0.40
-        roughness 0.5
-        metalness 0.1
-      }
-      geometry Box {
-        size 0.22 0.02 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.22 0.02 0.05
-  }
-}
-# Pared de cierre (bloquea el final del pasillo)
-Solid {
-  translation 0.42 0.0 0.025
-  name "z3_end"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.70 0.25 0.70
-        roughness 0.30
-        metalness 0.05
-      }
-      geometry Box {
-        size 0.02 0.10 0.05
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.02 0.10 0.05
-  }
-}
-# Pilar de salida (guiando hacia la abertura superior)
-Solid {
-  translation 0.34 0.18 0.025
-  name "z3_salida"
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.25 0.80 0.40
-        roughness 0.25
-        metalness 0.10
-      }
-      geometry Cylinder {
-        height 0.05
-        radius 0.02
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    height 0.05
-    radius 0.02
+    size 0.08 0.03 0.05
   }
 }
