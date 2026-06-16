@@ -28,7 +28,7 @@ AXLE_LENGTH = 0.052       # m      (distancia entre ruedas)
 GRID_SIZE = 40            # 40×40 celdas
 CELL_SIZE = 0.05          # 2.0 m / 40 = 0.05 m por celda
 ARENA_HALF = 1.0          # la arena mide 2 m × 2 m, centrada en (0, 0)
-INFLATION = 3             # inflar obstáculos 3 celdas (≈15 cm) para evitar roces físicos
+INFLATION = 1             # inflar obstáculos 1 celdas (≈5 cm) para evitar roces físicos
                           # compensar el radio del robot (~3.7 cm) + margen
 
 # ════════════════════════════════════════════════════════════════════
@@ -73,11 +73,11 @@ SCENARIOS = {
         'initial_heading': math.pi / 2.0,
         'obstacles': [
             # 5 bloques dispersos
-            ( 0.00,  0.00, 0.25, 0.25),   # bloque central grande
-            (-0.35,  0.40, 0.20, 0.20),   # superior-izquierda
-            ( 0.40, -0.35, 0.20, 0.20),   # inferior-derecha
-            ( 0.35,  0.55, 0.20, 0.15),   # zona superior
-            (-0.55, -0.35, 0.15, 0.15),   # inferior-izquierda
+            ( 0.00,  0.00, 0.50, 0.50),   # bloque central grande (size 0.5)
+            (-0.35,  0.40, 0.20, 0.20),   # superior-izquierda (size 0.2)
+            ( 0.40, -0.35, 0.20, 0.20),   # inferior-derecha (size 0.2)
+            ( 0.35,  0.55, 0.20, 0.15),   # zona superior (size 0.2x0.15)
+            (-0.55, -0.35, 0.15, 0.15),   # inferior-izquierda (size 0.15)
         ],
     },
     'complejo': {
@@ -602,8 +602,9 @@ def main():
     # ══════════════════════════════════════════════════════════════
     print("\n[2/4] Ejecutando algoritmo A*…")
     raw_path = AStarPlanner.find_path(grid, start_cell, goal_cell)
-    if raw_path is None:
+    if raw_path is None or len(raw_path) == 0:
         print("  ✗ No se encontró ruta. Verifique los obstáculos.")
+        grid.print_grid(start=start_cell, goal=goal_cell)
         while robot.step(TIME_STEP) != -1:
             pass
         return
