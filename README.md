@@ -116,7 +116,7 @@ Parámetros:
 
 ### Evitación Reactiva de Obstáculos
 
-Cuando los sensores (filtrados con EMA, α=0.4) detectan un obstáculo cercano, el sistema de evitación **tiene prioridad sobre el seguimiento de ruta**. Se usan los 8 sensores para clasificar el nivel de amenaza:
+Cuando los sensores (filtrados con EMA, α=0.7) detectan un obstáculo cercano, el sistema de evitación **tiene prioridad sobre el seguimiento de ruta**. Se usan los 8 sensores para clasificar el nivel de amenaza:
 
 | Nivel      | Valor crudo | Acción                                |
 | ---------- | ----------- | ------------------------------------- |
@@ -141,7 +141,7 @@ flowchart TD
 
     G --> H["Leer encoders → actualizar odometría"]
     H --> I["Leer 8 sensores de proximidad"]
-    I --> I2["Filtrar lecturas con EMA (α=0.4)"]
+    I --> I2["Filtrar lecturas con EMA (α=0.7)"]
     I2 --> J{"¿Obstáculo cercano?"}
 
     J -- Sí --> K["Evitación reactiva: girar"]
@@ -178,7 +178,7 @@ El proyecto extiende esto agregando un **controlador proporcional** que calcula 
 Del Lab 2 se integran:
 
 - **Lectura de sensores de proximidad** (ps0–ps7) para detección de obstáculos
-- **Filtro EMA** (Exponential Moving Average, α=0.4) aplicado a las lecturas de los 8 sensores para suavizar ruido y evitar falsos positivos en la evasión reactiva
+- **Filtro EMA** (Exponential Moving Average, α=0.7) aplicado a las lecturas de los 8 sensores para suavizar ruido y evitar falsos positivos en la evasión reactiva
 - **Encoders de rueda** para estimación de desplazamiento por odometría
 - **Navegación reactiva** como capa de seguridad: el sistema de evitación de obstáculos del Lab 2 se adapta como complemento a la planificación global con A*
 

@@ -696,7 +696,7 @@ def main():
     print(f"  Vel. base = {BASE_SPEED} rad/s | KP = {KP_HEADING} | "
           f"Umbral wp = {WAYPOINT_THRESH} m")
 
-    sensor_filter = SensorFilter(len(SENSOR_NAMES), alpha=0.4)
+    sensor_filter = SensorFilter(len(SENSOR_NAMES), alpha=0.7)
 
     robot.step(TIME_STEP)                         # paso inicial para sensores
     step = 0
