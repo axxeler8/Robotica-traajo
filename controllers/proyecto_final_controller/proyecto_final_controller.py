@@ -37,7 +37,7 @@ INFLATION = 1             # inflar obstáculos 1 celda (≈5 cm) para evitar roc
 WAYPOINT_THRESH = 0.08    # distancia para dar un waypoint por alcanzado (m)
 GOAL_THRESH = 0.04        # distancia para dar la meta por alcanzada (m)
 KP_HEADING = 3.0          # ganancia proporcional para control de heading
-BASE_SPEED = 2.5          # velocidad de crucero (rad/s)
+BASE_SPEED = 3.14         # velocidad de crucero (rad/s)
 SLOW_SPEED = 1.0          # velocidad reducida cerca de obstáculos
 
 # ════════════════════════════════════════════════════════════════════
