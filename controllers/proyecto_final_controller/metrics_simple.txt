@@ -1,8 +1,8 @@
 escenario: simple
 meta_alcanzada: si
-tiempo_total_s: 46.0
-ruta_planificada_m: 2.808
-trayectoria_real_m: 2.724
+tiempo_total_s: 67.5
+ruta_planificada_m: 2.674
+trayectoria_real_m: 2.774
 error_final_m: 0.0391
-casi_colisiones: 100
+casi_colisiones: 691
 waypoints: 3/3

@@ -73,7 +73,7 @@ SCENARIOS = {
         'initial_heading': math.pi / 2.0,
         'obstacles': [
             # 5 bloques dispersos
-            ( 0.00,  0.00, 0.50, 0.50),   # bloque central grande (size 0.5)
+            ( 0.00,  0.00, 0.25, 0.25),   # bloque central grande (size 0.25)
             (-0.35,  0.40, 0.20, 0.20),   # superior-izquierda (size 0.2)
             ( 0.40, -0.35, 0.20, 0.20),   # inferior-derecha (size 0.2)
             ( 0.35,  0.55, 0.20, 0.15),   # zona superior (size 0.2x0.15)
