@@ -107,6 +107,28 @@ SCENARIOS = {
 
 
 # ════════════════════════════════════════════════════════════════════
+#  FILTRO DE SENSORES
+# ════════════════════════════════════════════════════════════════════
+
+class SensorFilter:
+    """Filtro de media móvil exponencial (EMA) para suavizar lecturas
+    de sensores y reducir ruido sin introducir retardo excesivo."""
+    def __init__(self, n_sensors, alpha=0.4):
+        self.alpha = alpha
+        self.filtered = [0.0] * n_sensors
+        self.initialized = False
+
+    def update(self, raw):
+        if not self.initialized:
+            self.filtered = list(raw)
+            self.initialized = True
+            return self.filtered
+        for i in range(len(raw)):
+            self.filtered[i] = self.alpha * raw[i] + (1.0 - self.alpha) * self.filtered[i]
+        return self.filtered
+
+
+# ════════════════════════════════════════════════════════════════════
 #                       CLASES PRINCIPALES
 # ════════════════════════════════════════════════════════════════════
 
@@ -674,6 +696,8 @@ def main():
     print(f"  Vel. base = {BASE_SPEED} rad/s | KP = {KP_HEADING} | "
           f"Umbral wp = {WAYPOINT_THRESH} m")
 
+    sensor_filter = SensorFilter(len(SENSOR_NAMES), alpha=0.4)
+
     robot.step(TIME_STEP)                         # paso inicial para sensores
     step = 0
     MAX_STEPS = 10000                             # ~320 s de seguridad
@@ -686,11 +710,12 @@ def main():
         odom.update(le.getValue(), re.getValue())
 
         # Sensores
-        sv = [s.getValue() for s in sensors]
-        if max(sv) > DANGER_THRESH:
+        sv_raw = [s.getValue() for s in sensors]
+        sv = sensor_filter.update(sv_raw)
+        if max(sv_raw) > DANGER_THRESH:
             near_collisions += 1
 
-        # Calcular velocidades
+        # Calcular velocidades (con valores filtrados)
         vl, vr, action = nav.compute(odom.x, odom.y, odom.theta, sv)
         lm.setVelocity(vl)
         rm.setVelocity(vr)
@@ -706,6 +731,10 @@ def main():
             'ps2': round(sv[2], 2), 'ps3': round(sv[3], 2),
             'ps4': round(sv[4], 2), 'ps5': round(sv[5], 2),
             'ps6': round(sv[6], 2), 'ps7': round(sv[7], 2),
+            'ps0_raw': round(sv_raw[0], 2), 'ps1_raw': round(sv_raw[1], 2),
+            'ps2_raw': round(sv_raw[2], 2), 'ps3_raw': round(sv_raw[3], 2),
+            'ps4_raw': round(sv_raw[4], 2), 'ps5_raw': round(sv_raw[5], 2),
+            'ps6_raw': round(sv_raw[6], 2), 'ps7_raw': round(sv_raw[7], 2),
             'vl': round(vl, 4), 'vr': round(vr, 4),
         })
 

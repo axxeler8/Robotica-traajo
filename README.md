@@ -85,7 +85,7 @@ El robot debe desplazarse de forma autónoma desde una posición inicial hasta u
 
 ### Grilla de Ocupación
 
-El entorno se discretiza en una **grilla de 40×40 celdas** (resolución: 5 cm/celda). Los obstáculos se representan como celdas ocupadas, con una **inflación de 2 celdas** (~10 cm) para compensar el radio del robot y proveer un margen de seguridad.
+El entorno se discretiza en una **grilla de 40×40 celdas** (resolución: 5 cm/celda). Los obstáculos se representan como celdas ocupadas, con una **inflación de 1 celda** (~5 cm) para compensar el radio del robot y proveer un margen de seguridad.
 
 ### Algoritmo A*
 
@@ -109,22 +109,22 @@ v_der = v_base + ω · L / (2·R)
 ```
 
 Parámetros:
-- `Kp = 8.0` (ganancia proporcional)
-- `v_base = 3.5 rad/s` (velocidad base de motores)
-- Umbral de waypoint: 6 cm
-- Umbral de meta: 8 cm
+- `Kp = 3.0` (ganancia proporcional)
+- `v_base = 3.14 rad/s` (velocidad base de motores)
+- Umbral de waypoint: 8 cm
+- Umbral de meta: 4 cm
 
 ### Evitación Reactiva de Obstáculos
 
-Cuando los sensores frontales detectan un obstáculo cercano, el sistema de evitación **tiene prioridad sobre el seguimiento de ruta**:
+Cuando los sensores (filtrados con EMA, α=0.4) detectan un obstáculo cercano, el sistema de evitación **tiene prioridad sobre el seguimiento de ruta**. Se usan los 8 sensores para clasificar el nivel de amenaza:
 
 | Nivel      | Valor crudo | Acción                                |
 | ---------- | ----------- | ------------------------------------- |
-| Detección  | > 80        | Giro preventivo corto                 |
-| Crítico    | > 150       | Giro de evitación prolongado          |
-| Peligro    | > 300       | Giro de emergencia (doble duración)   |
+| Detección  | > 100       | Arco suave (avanza girando)           |
+| Crítico    | > 250       | Giro en el lugar                      |
+| Peligro    | > 500       | Retrocede girando (emergencia, 1.6 s) |
 
-La dirección de giro se decide comparando la suma de sensores izquierdos vs derechos: se gira hacia el lado con menos obstáculos.
+La dirección de giro se decide comparando la suma de los 4 sensores izquierdos (ps4–ps7) vs los 4 derechos (ps0–ps3): se gira hacia el lado con menos obstáculos.
 
 ---
 
@@ -141,7 +141,8 @@ flowchart TD
 
     G --> H["Leer encoders → actualizar odometría"]
     H --> I["Leer 8 sensores de proximidad"]
-    I --> J{"¿Obstáculo cercano?"}
+    I --> I2["Filtrar lecturas con EMA (α=0.4)"]
+    I2 --> J{"¿Obstáculo cercano?"}
 
     J -- Sí --> K["Evitación reactiva: girar"]
     J -- No --> L{"¿Waypoint alcanzado?"}
@@ -177,6 +178,7 @@ El proyecto extiende esto agregando un **controlador proporcional** que calcula 
 Del Lab 2 se integran:
 
 - **Lectura de sensores de proximidad** (ps0–ps7) para detección de obstáculos
+- **Filtro EMA** (Exponential Moving Average, α=0.4) aplicado a las lecturas de los 8 sensores para suavizar ruido y evitar falsos positivos en la evasión reactiva
 - **Encoders de rueda** para estimación de desplazamiento por odometría
 - **Navegación reactiva** como capa de seguridad: el sistema de evitación de obstáculos del Lab 2 se adapta como complemento a la planificación global con A*
 
@@ -199,27 +201,27 @@ z_k  = z_{k-1} − Δs · sin(φ_{k-1} + Δφ/2)
 
 ### Escenario Simple
 
-| Métrica                        | Valor |
-| ------------------------------ | ----- |
-| Meta alcanzada                 | —     |
-| Tiempo total                   | — s   |
-| Longitud ruta planificada      | — m   |
-| Longitud trayectoria ejecutada | — m   |
-| Diferencia plan/real           | — m   |
-| Error final de posición        | — m   |
-| Casi-colisiones                | —     |
+| Métrica                        | Valor   |
+| ------------------------------ | ------- |
+| Meta alcanzada                 | Sí      |
+| Tiempo total                   | 79.3 s  |
+| Longitud ruta planificada      | 2.196 m |
+| Longitud trayectoria ejecutada | 2.311 m |
+| Diferencia plan/real           | 0.115 m |
+| Error final de posición        | 0.039 m |
+| Casi-colisiones                | 26      |
 
 ### Escenario Complejo
 
-| Métrica                        | Valor |
-| ------------------------------ | ----- |
-| Meta alcanzada                 | —     |
-| Tiempo total                   | — s   |
-| Longitud ruta planificada      | — m   |
-| Longitud trayectoria ejecutada | — m   |
-| Diferencia plan/real           | — m   |
-| Error final de posición        | — m   |
-| Casi-colisiones                | —     |
+| Métrica                        | Valor   |
+| ------------------------------ | ------- |
+| Meta alcanzada                 | Sí      |
+| Tiempo total                   | 106.6 s |
+| Longitud ruta planificada      | 2.438 m |
+| Longitud trayectoria ejecutada | 2.618 m |
+| Diferencia plan/real           | 0.180 m |
+| Error final de posición        | 0.039 m |
+| Casi-colisiones                | 28      |
 
 ### Gráficos
 
