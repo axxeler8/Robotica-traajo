@@ -1,91 +1,323 @@
-# Laboratorio 1: Simulación de un Robot Móvil Diferencial en Webots
+# Proyecto Final: Navegación Autónoma con Planificación de Rutas (A*) en Webots
 
-## Descripción
+**Asignatura:** ICI 4150 — Robótica y Sistemas Autónomos 2026-01  
+**Línea seleccionada:** Línea A — Planificación de Rutas  
 
-Simulación de un robot móvil diferencial (**e-puck**) en **Webots** para comprender su cinemática. El controlador ejecuta secuencialmente una serie de experimentos que demuestran cómo las velocidades de las ruedas determinan la trayectoria del robot.
+## Integrantes
 
-### Modelo Cinemático
+| Nombre           |
+| ---------------- |
+| Martín Cevallos  |
+| Carlos Abarza    |
+| Matías Vergara   |
+
+## Objetivo
+
+Diseñar, implementar y evaluar un sistema de navegación autónoma para un robot móvil diferencial (**e-puck**) en Webots, que integra:
+
+- Control cinemático diferencial (Lab 1)
+- Percepción sensorial y estimación de movimiento con encoders (Lab 2)
+- Planificación global de rutas con el algoritmo **A\*** sobre una grilla de ocupación 2D
+- Navegación reactiva para evitación de obstáculos en tiempo real
+
+El robot debe desplazarse de forma autónoma desde una posición inicial hasta una meta en un entorno con obstáculos, siguiendo la ruta planificada y evitando colisiones.
+
+---
+
+## Descripción del Robot
+
+### Robot e-puck
+
+| Parámetro               | Valor               |
+| ------------------------ | ------------------- |
+| Modelo                   | e-puck              |
+| Tipo de locomoción       | Diferencial (2 ruedas) |
+| Radio de rueda           | 0.0205 m            |
+| Distancia entre ruedas   | 0.052 m             |
+| Radio del robot          | ~0.037 m            |
+| Velocidad máxima motores | 6.28 rad/s          |
+
+### Sensores utilizados
+
+| Sensor                | Dispositivo Webots        | Función                              |
+| --------------------- | ------------------------- | ------------------------------------ |
+| Proximidad frontal-der | `ps0`                    | Detectar obstáculos al frente        |
+| Proximidad der-frontal | `ps1`                    | Detectar obstáculos laterales-frente |
+| Proximidad derecho     | `ps2`                    | Detectar obstáculos laterales        |
+| Proximidad der-trasero | `ps3`                    | Cobertura trasera                    |
+| Proximidad izq-trasero | `ps4`                    | Cobertura trasera                    |
+| Proximidad izquierdo   | `ps5`                    | Detectar obstáculos laterales        |
+| Proximidad izq-frontal | `ps6`                    | Detectar obstáculos laterales-frente |
+| Proximidad frontal-izq | `ps7`                    | Detectar obstáculos al frente        |
+| Encoder izquierdo      | `left wheel sensor`      | Estimar desplazamiento               |
+| Encoder derecho        | `right wheel sensor`     | Estimar desplazamiento               |
+
+### Actuadores
+
+| Actuador       | Dispositivo Webots     | Función            |
+| -------------- | ---------------------- | ------------------ |
+| Motor izquierdo | `left wheel motor`    | Tracción izquierda |
+| Motor derecho   | `right wheel motor`   | Tracción derecha   |
+
+---
+
+## Descripción de los Escenarios de Prueba
+
+### Escenario Simple
+
+- **Arena:** 2 m × 2 m
+- **Obstáculos:** 5 bloques dispersos de diferentes tamaños
+- **Inicio:** (-0.75, -0.75) — marcado con disco azul
+- **Meta:** (0.75, 0.75) — marcado con disco verde
+- **Dificultad:** Baja. Ruta relativamente directa con desvíos menores.
+
+### Escenario Complejo
+
+- **Arena:** 2 m × 2 m
+- **Obstáculos:** 12 elementos — 4 muros horizontales que fuerzan un patrón zigzag + 4 bloques que estrechan los corredores + 4 bloques decorativos
+- **Inicio:** (-0.75, -0.75)
+- **Meta:** (0.75, 0.75)
+- **Dificultad:** Alta. El robot debe navegar un zigzag con corredores estrechos.
+
+---
+
+## Algoritmo Implementado: A* sobre Grilla de Ocupación
+
+### Grilla de Ocupación
+
+El entorno se discretiza en una **grilla de 40×40 celdas** (resolución: 5 cm/celda). Los obstáculos se representan como celdas ocupadas, con una **inflación de 2 celdas** (~10 cm) para compensar el radio del robot y proveer un margen de seguridad.
+
+### Algoritmo A*
+
+- **Tipo:** Búsqueda informada sobre grafos
+- **Nodos:** Celdas de la grilla (fila, columna)
+- **Movimiento:** 8 direcciones (4 cardinales + 4 diagonales)
+- **Costo:** 1.0 para movimiento cardinal, √2 para diagonal
+- **Heurística:** Distancia euclídea (admisible y consistente)
+- **Anti-corner-cutting:** Se prohíbe el movimiento diagonal cuando una celda adyacente está ocupada
+- **Suavizado:** Reducción de waypoints mediante verificación de línea de visión (Bresenham)
+
+### Navegación con Control Proporcional
+
+Una vez obtenida la ruta (lista de waypoints), el robot los sigue usando **control proporcional de heading**:
 
 ```
-v = (vr + vl) / 2        # velocidad lineal
-ω = (vr - vl) / L        # velocidad angular
+error_heading = heading_deseado − heading_actual
+ω = Kp · error_heading
+v_izq = v_base − ω · L / (2·R)
+v_der = v_base + ω · L / (2·R)
 ```
 
-Donde `vr` y `vl` son las velocidades de las ruedas derecha e izquierda, y `L` es la distancia entre ruedas.
+Parámetros:
+- `Kp = 8.0` (ganancia proporcional)
+- `v_base = 3.5 rad/s` (velocidad base de motores)
+- Umbral de waypoint: 6 cm
+- Umbral de meta: 8 cm
 
-## Cómo Ejecutar la Simulación
+### Evitación Reactiva de Obstáculos
 
-1. **Instalar Webots** desde [cyberbotics.com](https://cyberbotics.com/)
-2. **Abrir Webots**
-3. Ir a `File → Open World...`
-4. Seleccionar el archivo `worlds/laboratorio1.wbt`
-5. La simulación iniciará automáticamente, ejecutando todos los experimentos en secuencia
-6. Observar la consola de Webots para ver las descripciones de cada fase
+Cuando los sensores frontales detectan un obstáculo cercano, el sistema de evitación **tiene prioridad sobre el seguimiento de ruta**:
 
-## Experimentos y Resultados
+| Nivel      | Valor crudo | Acción                                |
+| ---------- | ----------- | ------------------------------------- |
+| Detección  | > 80        | Giro preventivo corto                 |
+| Crítico    | > 150       | Giro de evitación prolongado          |
+| Peligro    | > 300       | Giro de emergencia (doble duración)   |
 
-### Experimento 1: Movimiento Recto (`vr = vl = 3.0`)
+La dirección de giro se decide comparando la suma de sensores izquierdos vs derechos: se gira hacia el lado con menos obstáculos.
 
-El robot avanza en **línea recta**. Ambas ruedas giran a la misma velocidad, por lo que `ω = 0` y no hay giro.
+---
 
-### Experimento 2: Trayectoria Curva (`vl = 2.0, vr = 4.0`)
+## Diagrama de Flujo
 
-El robot sigue una **trayectoria curva** hacia la izquierda. La rueda derecha gira más rápido que la izquierda, causando un giro con `ω > 0`.
+```mermaid
+flowchart TD
+    A["Inicio"] --> B["Construir grilla de ocupación"]
+    B --> C["Ejecutar A*: inicio → meta"]
+    C --> D{"¿Ruta encontrada?"}
+    D -- No --> E["Error: sin ruta"]
+    D -- Sí --> F["Suavizar ruta → waypoints"]
+    F --> G["Loop principal"]
 
-### Experimento 3: Rotación en el Lugar (`vl = -3.0, vr = 3.0`)
+    G --> H["Leer encoders → actualizar odometría"]
+    H --> I["Leer 8 sensores de proximidad"]
+    I --> J{"¿Obstáculo cercano?"}
 
-El robot **gira sobre sí mismo** sin desplazarse. Las ruedas giran en sentidos opuestos, `v = 0` y `ω` es máximo.
+    J -- Sí --> K["Evitación reactiva: girar"]
+    J -- No --> L{"¿Waypoint alcanzado?"}
 
-### Extensión: Perturbaciones en los Actuadores
+    L -- Sí --> M["Avanzar al siguiente waypoint"]
+    L -- No --> N["Control P: corregir heading"]
 
-Se modifica de forma aleatoria la velocidad en cada iteración añadiendo ruido a un movimiento recto base (`v = 3.0`). Al comparar con la trayectoria ideal, se observa una _trayectoria con variaciones_, donde el robot experimenta constantes desviaciones.
+    M --> O{"¿Era la meta?"}
+    O -- Sí --> P["Detener robot → métricas"]
+    O -- No --> G
 
-### Desafío 1: Círculo
+    K --> G
+    N --> G
+```
 
-Manteniendo una diferencia constante entre las velocidades de las ruedas durante un tiempo prolongado, el robot traza un **círculo completo**.
+---
 
-### Desafío 2 (Opcional): Figura en 8
+## Relación con los Laboratorios 1 y 2
 
-Dos círculos completos concatenados en **direcciones opuestas** con una velocidad tangencial forman el 8 (uno girando hacia la izquierda y otro hacia la derecha).
+### Laboratorio 1 — Control Cinemático Diferencial
+
+Del Lab 1 se reutiliza directamente el **modelo cinemático diferencial** para el control de movimiento:
+
+```
+v = (v_r + v_l) / 2          # velocidad lineal
+ω = (v_r − v_l) / L          # velocidad angular
+```
+
+El proyecto extiende esto agregando un **controlador proporcional** que calcula las velocidades de cada rueda para seguir waypoints, en lugar de ejecutar movimientos predefinidos.
+
+### Laboratorio 2 — Percepción y Estimación
+
+Del Lab 2 se integran:
+
+- **Lectura de sensores de proximidad** (ps0–ps7) para detección de obstáculos
+- **Encoders de rueda** para estimación de desplazamiento por odometría
+- **Navegación reactiva** como capa de seguridad: el sistema de evitación de obstáculos del Lab 2 se adapta como complemento a la planificación global con A*
+
+Las ecuaciones de odometría utilizadas son las mismas del Lab 1/2:
+
+```
+Δs_r = r · Δθ_r          Δs_l = r · Δθ_l
+Δs   = (Δs_r + Δs_l) / 2
+Δφ   = (Δs_r − Δs_l) / L
+x_k  = x_{k-1} + Δs · cos(φ_{k-1} + Δφ/2)
+z_k  = z_{k-1} − Δs · sin(φ_{k-1} + Δφ/2)
+φ_k  = φ_{k-1} + Δφ
+```
+
+---
+
+## Resultados Obtenidos
+
+> **Nota:** Los valores se actualizarán tras ejecutar la simulación.
+
+### Escenario Simple
+
+| Métrica                        | Valor |
+| ------------------------------ | ----- |
+| Meta alcanzada                 | —     |
+| Tiempo total                   | — s   |
+| Longitud ruta planificada      | — m   |
+| Longitud trayectoria ejecutada | — m   |
+| Diferencia plan/real           | — m   |
+| Error final de posición        | — m   |
+| Casi-colisiones                | —     |
+
+### Escenario Complejo
+
+| Métrica                        | Valor |
+| ------------------------------ | ----- |
+| Meta alcanzada                 | —     |
+| Tiempo total                   | — s   |
+| Longitud ruta planificada      | — m   |
+| Longitud trayectoria ejecutada | — m   |
+| Diferencia plan/real           | — m   |
+| Error final de posición        | — m   |
+| Casi-colisiones                | —     |
+
+### Gráficos
+
+Los gráficos se generan automáticamente al ejecutar la simulación (o con `plot_results.py`):
+
+1. **Grilla + ruta A***: Muestra la grilla de ocupación con la ruta planificada
+2. **Planificada vs real**: Compara la ruta planificada con la trayectoria ejecutada
+3. **Sensores**: Lecturas de sensores de proximidad durante la navegación
+4. **Heading + acciones**: Orientación del robot y acciones tomadas en el tiempo
+
+---
+
+## Instrucciones para Ejecutar la Simulación
+
+### Requisitos
+
+- [Webots R2025a](https://cyberbotics.com/) instalado
+- Python 3 (incluido con Webots)
+- `matplotlib` (opcional, para generación automática de gráficos)
+
+### Pasos
+
+1. **Abrir Webots**
+2. Ir a `File → Open World...`
+3. Seleccionar uno de los mundos:
+   - `worlds/proyecto_final_simple.wbt` — Escenario simple
+   - `worlds/proyecto_final_complejo.wbt` — Escenario complejo
+4. La simulación **inicia automáticamente**:
+   - El controlador construye la grilla, ejecuta A* y muestra la ruta en consola
+   - El robot navega hacia la meta
+   - Al finalizar, se imprimen métricas y se generan gráficos
+5. Observar la **consola de Webots** para ver el progreso y los resultados
+
+### Generar gráficos manualmente
+
+Si `matplotlib` no está disponible en el entorno de Webots:
+
+```bash
+cd controllers/proyecto_final_controller/
+python3 plot_results.py simple
+python3 plot_results.py complejo
+```
+
+---
+
+## Conclusiones
+
+1. **Integración exitosa de los laboratorios:** El proyecto unifica el control cinemático diferencial (Lab 1) con la percepción sensorial y estimación por encoders (Lab 2) en un sistema de navegación autónoma completo.
+
+2. **A\* como planificador global:** El algoritmo A* sobre la grilla de ocupación proporciona rutas óptimas y evita las limitaciones de la navegación puramente reactiva (ej.: quedar atrapado en mínimos locales).
+
+3. **Arquitectura de dos capas:** La combinación de planificación global (A*) con evitación reactiva local (sensores) permite manejar tanto la estrategia de alto nivel como las correcciones en tiempo real.
+
+### Limitaciones
+
+- **Error odométrico acumulativo:** La estimación por encoders acumula error con el tiempo, especialmente en giros. En trayectorias largas (escenario complejo), la posición estimada puede diferir significativamente de la real.
+- **Grilla estática:** El mapa es predefinido. Si un obstáculo no previsto aparece, el robot depende exclusivamente de la evitación reactiva.
+- **Rango de sensores IR:** Los sensores de proximidad del e-puck tienen un rango limitado (~5 cm), lo que reduce el tiempo de reacción ante obstáculos.
+- **Resolución de la grilla:** Con celdas de 5 cm, corredores estrechos pueden quedar completamente bloqueados tras la inflación.
+
+### Posibles Mejoras
+
+- Implementar un **Filtro de Kalman Extendido (EKF)** para fusionar odometría con sensores y reducir el error acumulativo (extensión del Lab 2).
+- Usar un **LiDAR** para aumentar el rango de detección.
+- Implementar **replanificación dinámica** (D* Lite) para actualizar la ruta cuando se detectan obstáculos inesperados.
+- Adaptar la grilla en tiempo real para lograr un sistema cercano a SLAM.
+- Añadir un **controlador PID** en lugar de solo proporcional para mejorar la precisión del seguimiento de ruta.
+
+---
 
 ## Video Demostrativo
 
-En el siguiente video se muestra la ejecución completa de la simulación, incluyendo todos los experimentos y desafíos:
+> Agregar enlace o archivo de video tras grabar la demostración en Webots.
 
-[![Video de la simulación](https://img.shields.io/badge/Ver%20Video-Simulación%20Webots-blue?style=for-the-badge)](video/lab1_demo.mp4)
-
-> El video se encuentra en la carpeta `video/` del repositorio.
-
-## Preguntas de Análisis
-
-**1. ¿Qué ocurre cuando ambas ruedas tienen la misma velocidad?**
-El robot se mueve en **línea recta**, ya que la velocidad angular es cero (ω = 0).
-
-**2. ¿Cómo cambia la trayectoria cuando las velocidades son diferentes?**
-El robot describe una **trayectoria curva**. Gira hacia el lado de la rueda más lenta. A mayor diferencia de velocidades, menor es el radio de curvatura.
-
-**3. ¿Qué ocurre cuando una rueda gira en sentido opuesto a la otra?**
-El robot **rota sobre su propio eje** sin desplazarse linealmente (v = 0), ya que las velocidades se cancelan.
-
-**4. ¿Qué tipo de movimiento permite dibujar un círculo?**
-Un movimiento con **velocidades diferentes pero constantes** en ambas ruedas. Esto produce una velocidad angular constante que traza una circunferencia.
+---
 
 ## Estructura del Proyecto
 
 ```
-Robotica/
-├── README.md
-├── .gitignore
+Robotica-traajo/
+├── README.md                                     ← Este archivo (informe)
+├── ProyectoFinal.pdf                             ← Enunciado del proyecto
 ├── worlds/
-│   └── laboratorio1.wbt
+│   ├── laboratorio1.wbt                          ← Mundo Lab 1
+│   ├── proyecto_final_simple.wbt                 ← Escenario simple
+│   └── proyecto_final_complejo.wbt               ← Escenario complejo
 ├── controllers/
-│   └── lab1_controller/
-│       └── lab1_controller.py
-└── video/                ← video demostrativo de la simulación
+│   ├── lab1_controller/
+│   │   └── lab1_controller.py                    ← Controlador Lab 1
+│   └── proyecto_final_controller/
+│       ├── proyecto_final_controller.py           ← Controlador principal
+│       └── plot_results.py                        ← Generador de gráficos
+└── video/                                         ← Videos demostrativos
 ```
 
 ## Herramientas
 
-- **Webots** — Simulador de robots
-- **Python** — Lenguaje del controlador
-# Robotica-traajo
+- **Webots R2025a** — Simulador de robots
+- **Python 3** — Lenguaje del controlador
+- **matplotlib** — Generación de gráficos
+- **Algoritmo A\*** — Planificación de rutas

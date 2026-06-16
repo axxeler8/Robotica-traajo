@@ -1,0 +1,318 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+
+WorldInfo {
+  info [
+    "Proyecto Final: Navegación Autónoma con A*"
+    "Escenario Complejo — muros zigzag + bloques"
+    "ICI 4150 — Robótica y Sistemas Autónomos 2026-01"
+  ]
+  title "Proyecto Final - Escenario Complejo"
+  basicTimeStep 32
+}
+Viewpoint {
+  orientation -0.5773 0.5773 0.5773 2.094
+  position 0 0 3.0
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  floorSize 2 2
+  floorTileSize 0.5 0.5
+  wallHeight 0.1
+}
+
+# ── Marcador de INICIO (disco azul) ────────────────────────────
+DEF START Transform {
+  translation -0.75 -0.75 0.001
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.1 0.3 0.9
+        emissiveColor 0 0.1 0.4
+        roughness 0.3
+      }
+      geometry Cylinder {
+        height 0.002
+        radius 0.06
+      }
+    }
+  ]
+}
+
+# ── Marcador de META (disco verde) ─────────────────────────────
+DEF GOAL Transform {
+  translation 0.75 0.75 0.001
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.1 0.85 0.2
+        emissiveColor 0 0.35 0.05
+        roughness 0.3
+      }
+      geometry Cylinder {
+        height 0.002
+        radius 0.06
+      }
+    }
+  ]
+}
+
+# ── Robot e-puck ───────────────────────────────────────────────
+E-puck {
+  translation -0.75 -0.75 0
+  rotation 0 0 1 1.5708
+  name "e-puck"
+  controller "proyecto_final_controller"
+  customData "complejo"
+}
+
+# ════════════════════════════════════════════════════════════════
+#  OBSTÁCULOS
+# ════════════════════════════════════════════════════════════════
+
+# ── MURO 1  (-0.25, -0.30, 0.50, 0.05) ────────────────────────
+DEF WALL_1 Solid {
+  translation -0.25 -0.30 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.3 0.3 0.5
+        roughness 0.6
+      }
+      geometry Box {
+        size 0.50 0.05 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.50 0.05 0.1
+  }
+  name "wall_1"
+}
+
+# ── MURO 2  (0.25, 0.05, 0.50, 0.05) ──────────────────────────
+DEF WALL_2 Solid {
+  translation 0.25 0.05 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.3 0.3 0.5
+        roughness 0.6
+      }
+      geometry Box {
+        size 0.50 0.05 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.50 0.05 0.1
+  }
+  name "wall_2"
+}
+
+# ── MURO 3  (-0.25, 0.40, 0.50, 0.05) ─────────────────────────
+DEF WALL_3 Solid {
+  translation -0.25 0.40 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.3 0.3 0.5
+        roughness 0.6
+      }
+      geometry Box {
+        size 0.50 0.05 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.50 0.05 0.1
+  }
+  name "wall_3"
+}
+
+# ── MURO 4  (0.25, 0.70, 0.50, 0.05) ──────────────────────────
+DEF WALL_4 Solid {
+  translation 0.25 0.70 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.3 0.3 0.5
+        roughness 0.6
+      }
+      geometry Box {
+        size 0.50 0.05 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.50 0.05 0.1
+  }
+  name "wall_4"
+}
+
+# ── Bloque 5  (0.55, -0.55, 0.12, 0.12) ───────────────────────
+DEF BLK_5 Solid {
+  translation 0.55 -0.55 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.3 0.15
+        roughness 0.5
+      }
+      geometry Box {
+        size 0.12 0.12 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.12 0.12 0.1
+  }
+  name "block_5"
+}
+
+# ── Bloque 6  (-0.55, 0.20, 0.12, 0.12) ───────────────────────
+DEF BLK_6 Solid {
+  translation -0.55 0.20 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.3 0.15
+        roughness 0.5
+      }
+      geometry Box {
+        size 0.12 0.12 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.12 0.12 0.1
+  }
+  name "block_6"
+}
+
+# ── Bloque 7  (0.60, 0.55, 0.12, 0.12) ────────────────────────
+DEF BLK_7 Solid {
+  translation 0.60 0.55 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.3 0.15
+        roughness 0.5
+      }
+      geometry Box {
+        size 0.12 0.12 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.12 0.12 0.1
+  }
+  name "block_7"
+}
+
+# ── Bloque 8  (-0.55, -0.10, 0.12, 0.12) ──────────────────────
+DEF BLK_8 Solid {
+  translation -0.55 -0.10 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.3 0.15
+        roughness 0.5
+      }
+      geometry Box {
+        size 0.12 0.12 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.12 0.12 0.1
+  }
+  name "block_8"
+}
+
+# ── Bloque 9  (0.00, -0.65, 0.15, 0.15) ───────────────────────
+DEF BLK_9 Solid {
+  translation 0.00 -0.65 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.6 0.2 0.2
+        roughness 0.5
+      }
+      geometry Box {
+        size 0.15 0.15 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.15 0.15 0.1
+  }
+  name "block_9"
+}
+
+# ── Bloque 10  (-0.65, 0.65, 0.12, 0.12) ──────────────────────
+DEF BLK_10 Solid {
+  translation -0.65 0.65 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.6 0.2 0.2
+        roughness 0.5
+      }
+      geometry Box {
+        size 0.12 0.12 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.12 0.12 0.1
+  }
+  name "block_10"
+}
+
+# ── Bloque 11  (0.65, -0.25, 0.12, 0.12) ──────────────────────
+DEF BLK_11 Solid {
+  translation 0.65 -0.25 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.6 0.2 0.2
+        roughness 0.5
+      }
+      geometry Box {
+        size 0.12 0.12 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.12 0.12 0.1
+  }
+  name "block_11"
+}
+
+# ── Bloque 12  (-0.30, -0.65, 0.12, 0.12) ─────────────────────
+DEF BLK_12 Solid {
+  translation -0.30 -0.65 0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.6 0.2 0.2
+        roughness 0.5
+      }
+      geometry Box {
+        size 0.12 0.12 0.1
+      }
+    }
+  ]
+  boundingObject Box {
+    size 0.12 0.12 0.1
+  }
+  name "block_12"
+}
