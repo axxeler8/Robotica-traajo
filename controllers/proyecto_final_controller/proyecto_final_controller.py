@@ -18,7 +18,7 @@ from controller import Robot
 #  CONSTANTES DEL ROBOT E-PUCK
 # ════════════════════════════════════════════════════════════════════
 TIME_STEP = 32            # ms
-MAX_SPEED = 3.14          # reducida a la mitad para evitar resbalones violentos
+MAX_SPEED = 3.14          # velocidad máxima (rad/s)
 WHEEL_RADIUS = 0.0205     # m      (radio de cada rueda)
 AXLE_LENGTH = 0.052       # m      (distancia entre ruedas)
 
@@ -28,17 +28,17 @@ AXLE_LENGTH = 0.052       # m      (distancia entre ruedas)
 GRID_SIZE = 40            # 40×40 celdas
 CELL_SIZE = 0.05          # 2.0 m / 40 = 0.05 m por celda
 ARENA_HALF = 1.0          # la arena mide 2 m × 2 m, centrada en (0, 0)
-INFLATION = 1             # inflar obstáculos 1 celdas (≈5 cm) para evitar roces físicos
-                          # compensar el radio del robot (~3.7 cm) + margen
+INFLATION = 1             # inflar obstáculos 1 celda (≈5 cm) para evitar roces físicos
+                           # compensar el radio del robot (~3.7 cm) + margen
 
 # ════════════════════════════════════════════════════════════════════
 #  PARÁMETROS DE NAVEGACIÓN
 # ════════════════════════════════════════════════════════════════════
 WAYPOINT_THRESH = 0.08    # distancia para dar un waypoint por alcanzado (m)
 GOAL_THRESH = 0.04        # distancia para dar la meta por alcanzada (m)
-KP_HEADING = 3.0          # reducida a 3.0 para evitar giros violentos
-BASE_SPEED = 3.14         # velocidad base reducida a la mitad
-SLOW_SPEED = 1.5          # velocidad reducida cerca de obstáculos
+KP_HEADING = 3.0          # ganancia proporcional para control de heading
+BASE_SPEED = 2.5          # velocidad de crucero (rad/s)
+SLOW_SPEED = 1.0          # velocidad reducida cerca de obstáculos
 
 # ════════════════════════════════════════════════════════════════════
 #  PARÁMETROS DE EVITACIÓN REACTIVA
@@ -46,7 +46,8 @@ SLOW_SPEED = 1.5          # velocidad reducida cerca de obstáculos
 DETECT_THRESH = 100.0      # valor crudo del sensor → obstáculo detectado
 CRITICAL_THRESH = 250.0   # valor crudo → obstáculo cercano
 DANGER_THRESH = 500.0     # valor crudo → peligro inminente
-AVOID_STEPS = 20          # pasos de giro durante la evitación
+AVOID_STEPS = 30          # pasos de giro durante la evitación (~1 s)
+AVOID_EMERGENCY = 50      # pasos para evasión de emergencia (~1.6 s)
 
 # ════════════════════════════════════════════════════════════════════
 #  SENSORES DE PROXIMIDAD DEL E-PUCK
@@ -118,8 +119,9 @@ class OccupancyGrid:
     # ── Conversión coordenadas ────────────────────────────────────
     def world_to_grid(self, wx, wy):
         """Convierte coordenadas del mundo (x, z) a índices (fila, col)."""
-        col = int((wx + ARENA_HALF) / CELL_SIZE)
-        row = int((wy + ARENA_HALF) / CELL_SIZE)
+        EPS = 1e-9
+        col = int((wx + ARENA_HALF) / CELL_SIZE + EPS)
+        row = int((wy + ARENA_HALF) / CELL_SIZE + EPS)
         col = max(0, min(GRID_SIZE - 1, col))
         row = max(0, min(GRID_SIZE - 1, row))
         return (row, col)
@@ -136,10 +138,11 @@ class OccupancyGrid:
         inflate: celdas adicionales de inflación (para radio del robot)."""
         half_x = sx / 2.0 + inflate * CELL_SIZE
         half_y = sy / 2.0 + inflate * CELL_SIZE
+        EPS = 1e-9
         c_min = int((cx - half_x + ARENA_HALF) / CELL_SIZE)
-        c_max = int((cx + half_x + ARENA_HALF) / CELL_SIZE)
+        c_max = int((cx + half_x + ARENA_HALF) / CELL_SIZE + EPS)
         r_min = int((cy - half_y + ARENA_HALF) / CELL_SIZE)
-        r_max = int((cy + half_y + ARENA_HALF) / CELL_SIZE)
+        r_max = int((cy + half_y + ARENA_HALF) / CELL_SIZE + EPS)
         for r in range(max(0, r_min), min(GRID_SIZE, r_max + 1)):
             for c in range(max(0, c_min), min(GRID_SIZE, c_max + 1)):
                 self.grid[r][c] = 1
@@ -333,36 +336,57 @@ class NavigationController:
             return 0.0, 0.0, "GOAL_REACHED"
 
         # ── Evitación reactiva (prioridad alta) ──────────────────
-        front_max = max(sv[0], sv[7])         # ps0 y ps7 = frontales
-        side_max  = max(sv[1], sv[6])         # ps1 y ps6 = laterales-frontales
+        # Clasificación de sensores por zona:
+        #   Derecha:     ps0(+10°), ps1(+45°), ps2(+90°), ps3(+135°)
+        #   Izquierda:   ps4(-135°), ps5(-90°), ps6(-45°), ps7(-10°)
+        front_narrow = max(sv[0], sv[7])
+        front_wide   = max(sv[0], sv[1], sv[6], sv[7])
+        left_all     = sv[4] + sv[5] + sv[6] + sv[7]
+        right_all    = sv[0] + sv[1] + sv[2] + sv[3]
+        overall_max  = max(sv)
 
-        if front_max > DANGER_THRESH:
-            self.avoid_counter = AVOID_STEPS * 2
-        elif front_max > CRITICAL_THRESH or side_max > DANGER_THRESH:
+        # ── Asignar nivel de amenaza actual ──────────────────────
+        if overall_max > DANGER_THRESH:
+            threat = 3
+        elif front_wide > CRITICAL_THRESH or overall_max > CRITICAL_THRESH:
+            threat = 2
+        elif front_narrow > DETECT_THRESH or front_wide > DETECT_THRESH * 1.5:
+            threat = 1
+        else:
+            threat = 0
+
+        # ── Activar/actualizar contador de evasión ───────────────
+        #    Solo se extiende si la amenaza empeora (no reseteo infinito)
+        if threat >= 3:
+            self.avoid_counter = max(self.avoid_counter, AVOID_EMERGENCY)
+        elif threat >= 2:
             self.avoid_counter = max(self.avoid_counter, AVOID_STEPS)
-        elif front_max > DETECT_THRESH or side_max > CRITICAL_THRESH:
+        elif threat >= 1:
             self.avoid_counter = max(self.avoid_counter, AVOID_STEPS // 2)
 
         if self.avoid_counter > 0:
             self.avoid_counter -= 1
-            left_sum  = sv[5] + sv[6] + sv[7]   # sensores izquierdos
-            right_sum = sv[0] + sv[1] + sv[2]   # sensores derechos
-            if front_max > CRITICAL_THRESH:
-                if left_sum > right_sum:
-                    action = "AVOID_RIGHT"
-                    return SLOW_SPEED, -SLOW_SPEED, action
+            # Decidir dirección de giro: alejarse del lado con más obstáculos
+            turn_right = left_all > right_all
+
+            if threat >= 3:
+                # EMERGENCIA: retroceder girando para alejarse del obstáculo
+                if turn_right:
+                    return SLOW_SPEED * 0.3, -SLOW_SPEED * 0.7, "AVOID_RIGHT"
                 else:
-                    action = "AVOID_LEFT"
-                    return -SLOW_SPEED, SLOW_SPEED, action
+                    return -SLOW_SPEED * 0.7, SLOW_SPEED * 0.3, "AVOID_LEFT"
+            elif threat >= 2:
+                # CRÍTICO: girar en el lugar
+                if turn_right:
+                    return SLOW_SPEED * 0.6, -SLOW_SPEED * 0.6, "AVOID_RIGHT"
+                else:
+                    return -SLOW_SPEED * 0.6, SLOW_SPEED * 0.6, "AVOID_LEFT"
             else:
-                if left_sum > right_sum:
-                    action = "AVOID_RIGHT"
-                    # Girar suavemente a la derecha avanzando (arco)
-                    return SLOW_SPEED, SLOW_SPEED * 0.2, action
+                # DETECCIÓN: arco suave avanzando (no detenerse)
+                if turn_right:
+                    return SLOW_SPEED * 0.8, SLOW_SPEED * 0.15, "AVOID_RIGHT"
                 else:
-                    action = "AVOID_LEFT"
-                    # Girar suavemente a la izquierda avanzando (arco)
-                    return SLOW_SPEED * 0.2, SLOW_SPEED, action
+                    return SLOW_SPEED * 0.15, SLOW_SPEED * 0.8, "AVOID_LEFT"
 
         # ── Seguimiento de waypoints ─────────────────────────────
         wp_x, wp_y = self.waypoints[self.wp_idx]
@@ -562,13 +586,16 @@ def main():
     # ══════════════════════════════════════════════════════════════
     print("\n[1/4] Construyendo grilla de ocupación…")
     grid = OccupancyGrid()
+    display_grid = OccupancyGrid()
     for obs in sc['obstacles']:
         grid.add_obstacle(*obs, inflate=INFLATION)
+        display_grid.add_obstacle(*obs, inflate=0)
     # Agregar bordes de la arena como obstáculos virtuales para no chocar
-    grid.add_obstacle(0.0, 1.0, 2.0, 0.0, inflate=INFLATION)   # Muro Superior
-    grid.add_obstacle(0.0, -1.0, 2.0, 0.0, inflate=INFLATION)  # Muro Inferior
-    grid.add_obstacle(1.0, 0.0, 0.0, 2.0, inflate=INFLATION)   # Muro Derecho
-    grid.add_obstacle(-1.0, 0.0, 0.0, 2.0, inflate=INFLATION)  # Muro Izquierdo
+    for g, inf in [(grid, INFLATION), (display_grid, 0.5)]:
+        g.add_obstacle(0.0, 1.0, 2.0, 0.0, inflate=inf)   # Muro Superior
+        g.add_obstacle(0.0, -1.0, 2.0, 0.0, inflate=inf)  # Muro Inferior
+        g.add_obstacle(1.0, 0.0, 0.0, 2.0, inflate=inf)   # Muro Derecho
+        g.add_obstacle(-1.0, 0.0, 0.0, 2.0, inflate=inf)  # Muro Izquierdo
 
 
     start_cell = grid.world_to_grid(sc['start_x'], sc['start_y'])
@@ -624,7 +651,7 @@ def main():
         print(f"    [{i:2d}] ({wx:+.3f}, {wy:+.3f}){tag}")
 
     print("\n  Mapa (S=inicio, G=meta, ·=ruta, █=obstáculo):")
-    grid.print_grid(path=raw_path, start=start_cell, goal=goal_cell)
+    display_grid.print_grid(path=raw_path, start=start_cell, goal=goal_cell)
 
     planned_len = sum(
         math.sqrt((wp_world[i][0] - wp_world[i - 1][0]) ** 2 +

@@ -1,8 +1,8 @@
 escenario: complejo
 meta_alcanzada: si
-tiempo_total_s: 71.0
+tiempo_total_s: 153.3
 ruta_planificada_m: 2.438
-trayectoria_real_m: 2.601
-error_final_m: 0.0394
-casi_colisiones: 660
+trayectoria_real_m: 2.772
+error_final_m: 0.0396
+casi_colisiones: 17
 waypoints: 7/7
